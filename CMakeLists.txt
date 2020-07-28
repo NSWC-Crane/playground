@@ -38,10 +38,12 @@ if(WIN32)
 		set(COMMON_ROOT "C:/Projects/Common")
     elseif(${PLATFORM} STREQUAL "BEAST")
         set(COMMON_ROOT "D:/Common")
+    elseif(${PLATFORM} STREQUAL "LaptopLenovo")
+        set(COMMON_ROOT "C:/Common")
     else()
         set(COMMON_ROOT "D:/Common")
-    endif()    
-    
+    endif()
+
 else()
 
     if(${PLATFORM} STREQUAL "MainGear")
@@ -52,7 +54,7 @@ else()
     else()
         set(COMMON_ROOT "~/Projects/Common")
     endif()
-    
+
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
@@ -68,8 +70,8 @@ file(GLOB SOURCES "src/*.c*"
     "${COMMON_ROOT}/src/*.cpp"
     )
 
-set(project_includes 
-    "include" 
+set(project_includes
+    "include"
     "${COMMON_ROOT}/include"
     )
 

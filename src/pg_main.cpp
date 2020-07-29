@@ -42,7 +42,6 @@
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-    cv::Mat src;
     cv::Mat dst;
     cv::Mat kernel;
 
@@ -75,19 +74,16 @@ int main(int argc, char** argv)
         cv::imshow(cv_window, cv_img);
         cv::waitKey(0);
 
-
-        src = cv::imread("C:/Users/Javier/Pictures/4ZSWD4L.jpg");
         kernel = cv::Mat(kernel_size, kernel_size, CV_32F, outline);
-
-        // std::cout << std::endl << "kernel[1][1] = " << kernel.at<float>(1,1) << std::endl;
         std::cout << std::endl << "kernel = " << std::endl << " " << kernel << std::endl << std::endl;
 
         cv_window = "Filtered Image";
-        cv::filter2D(src, dst, ddepth, kernel, anchor, delta , cv::BORDER_DEFAULT);
+        cv::filter2D(cv_img, dst, ddepth, kernel, anchor, delta , cv::BORDER_DEFAULT);
         cv::imshow(cv_window, dst);
         cv::waitKey(0);
 
-        cv::imwrite( "C:/Users/Javier/Pictures/4ZSWD4L_filter2d.jpg", dst );
+        // save new image
+        cv::imwrite("C:/Users/Javier/Pictures/4ZSWD4L_filter2d.jpg", dst);
 
     }
     catch(std::exception& e)

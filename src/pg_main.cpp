@@ -42,16 +42,25 @@
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-    std::string sdate, stime;
+    cv::Mat src;
+    cv::Mat dst;
+    cv::Mat kernel;
 
-    uint64_t idx=0, jdx=0;
-    uint64_t r, c;
+    // initialize parameters for the filter
+    int ddepth = -1;
+    cv::Point anchor = cv::Point(-1,-1);
+    double delta = 0;
+    int kernel_size = 3;
 
-    typedef std::chrono::duration<double> d_sec;
-    auto start_time = std::chrono::system_clock::now();
-    auto stop_time = std::chrono::system_clock::now();
-    unsigned long training_duration = 1;  // number of hours to train
-    auto elapsed_time = std::chrono::duration_cast<d_sec>(stop_time - start_time);
+    // define filters
+    float outline[9] = { -1, -1, -1,
+                         -1,  20, -1,
+                         -1, -1, -1};
+
+    float sharpen[9] = { 0, -1, 0,
+                        -1, 5, -1,
+                         0, -1, 0};
+
 
     // do work here
     try
@@ -64,8 +73,21 @@ int main(int argc, char** argv)
         std::string cv_window = "Original Image";
         cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
         cv::imshow(cv_window, cv_img);
-
         cv::waitKey(0);
+
+
+        src = cv::imread("C:/Users/Javier/Pictures/4ZSWD4L.jpg");
+        kernel = cv::Mat(kernel_size, kernel_size, CV_32F, outline);
+
+        // std::cout << std::endl << "kernel[1][1] = " << kernel.at<float>(1,1) << std::endl;
+        std::cout << std::endl << "kernel = " << std::endl << " " << kernel << std::endl << std::endl;
+
+        cv_window = "Filtered Image";
+        cv::filter2D(src, dst, ddepth, kernel, anchor, delta , cv::BORDER_DEFAULT);
+        cv::imshow(cv_window, dst);
+        cv::waitKey(0);
+
+        cv::imwrite( "C:/Users/Javier/Pictures/4ZSWD4L_filter2d.jpg", dst );
 
     }
     catch(std::exception& e)

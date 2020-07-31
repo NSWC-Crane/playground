@@ -78,7 +78,7 @@ set(project_includes
 # find OpenCV
 message(STATUS "--------------------------------------------------------------------------------")
 message(STATUS "Looking for OpenCV installation...")
-find_package(OpenCV REQUIRED PATHS "C:/OpenCV-4.4.0/opencv/build/x64/vc15/lib")
+find_package(OpenCV REQUIRED)
 if (OpenCV_FOUND)
 	set(project_includes ${project_includes} ${OpenCV_INCLUDE_DIRS})
 	set(project_libs ${project_libs} ${OpenCV_LIBS})

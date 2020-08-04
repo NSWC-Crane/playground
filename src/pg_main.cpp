@@ -63,6 +63,10 @@ int main(int argc, char** argv)
     {
         // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
         std::string test_file = "C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L.jpg";
+        if (argc > 1) 
+            test_file = argv[1];
+        
+        std::cout << "Path to image " << test_file << std::endl;
 
         // read image 
         src_img = cv::imread(test_file, cv::IMREAD_COLOR);
@@ -91,8 +95,8 @@ int main(int argc, char** argv)
 
 
         // save new images
-        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_blur.jpg", blurred_img);
         cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_mask.jpg", mask_img);
+        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_blur.jpg", blurred_img);
     }
     catch(std::exception& e)
     {

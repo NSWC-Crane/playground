@@ -119,8 +119,8 @@ int main(int argc, char** argv)
         cv::waitKey(0);
 
         // save new images
-        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_mask.jpg", mask);
-        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_mask_inv.jpg", mask_inv);
+        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/mask.jpg", mask);
+        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/mask_inv.jpg", mask_inv);
         cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_blur.jpg", src_blur);
         cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_masked.jpg", masked_blurred);
         cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_masked_inv.jpg", masked_org);

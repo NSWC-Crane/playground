@@ -44,7 +44,8 @@ int main(int argc, char** argv)
 {
     cv::Mat blurred_img;
     cv::Mat mask_img;
-    cv::Mat cv_img;
+    cv::Mat src_img;
+    cv::Mat src_gray;
 
     // initialize parameters for filter2D
     cv::Point anchor = cv::Point(-1, -1);
@@ -52,8 +53,6 @@ int main(int argc, char** argv)
     double delta = 0;
     int ddepth = -1;
 
-    // define filter
-    cv::Mat kernel = cv::Mat::ones(kernel_size, kernel_size, CV_32F)/(float)(kernel_size*kernel_size);
     
     // do work here
     try
@@ -61,23 +60,34 @@ int main(int argc, char** argv)
         // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
         std::string test_file = "C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L.jpg";
 
-        // read image as grayscale
-        cv_img = cv::imread(test_file, cv::IMREAD_GRAYSCALE);
+        // read image 
+        src_img = cv::imread(test_file, cv::IMREAD_COLOR);
         
         std::string cv_window = "Original Image";
         cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-        cv::imshow(cv_window, cv_img);
+        cv::imshow(cv_window, src_img);
         cv::waitKey(0);
 
-        std::cout << std::endl << "kernel = " << std::endl << " " << kernel << std::endl << std::endl;
 
-        cv_window = "Filtered Image";
-        cv::filter2D(cv_img, mask_img, ddepth, kernel, anchor, delta , cv::BORDER_DEFAULT);
+        cv_window = "Mask Image";
+        cv::cvtColor(src_img, src_gray, cv::COLOR_BGR2GRAY);
+        cv::threshold(src_gray, mask_img, 120, 255, cv::THRESH_BINARY);
         cv::imshow(cv_window, mask_img);
         cv::waitKey(0);
 
-        // save new image
-        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_blur.jpg", mask_img);
+
+        // define blur filter
+        cv::Mat kernel = cv::Mat::ones(kernel_size, kernel_size, CV_32F) / (float)(kernel_size * kernel_size);
+        std::cout << std::endl << "kernel = " << std::endl << " " << kernel << std::endl << std::endl;
+
+        cv_window = "Blurred Image";
+        cv::filter2D(src_img, blurred_img, ddepth, kernel, anchor, delta , cv::BORDER_DEFAULT);
+        cv::imshow(cv_window, blurred_img);
+        cv::waitKey(0);
+
+        // save new images
+        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_blur.jpg", blurred_img);
+        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_mask.jpg", mask_img);
 
     }
     catch(std::exception& e)

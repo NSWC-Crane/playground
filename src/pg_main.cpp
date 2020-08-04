@@ -36,7 +36,17 @@
 #include <opencv2/imgcodecs.hpp>
 
 // custom includes
-#include <file_ops.h>
+
+
+// global variables //
+int const threshold = 120;
+int const max_binary_value = 255;
+
+// initialize parameters for filter2D
+int const kernel_size = 5;
+double const delta = 0;
+int const ddepth = -1;
+cv::Point anchor = cv::Point(-1, -1);
 
 
 // ----------------------------------------------------------------------------------------
@@ -47,13 +57,7 @@ int main(int argc, char** argv)
     cv::Mat src_img;
     cv::Mat src_gray;
 
-    // initialize parameters for filter2D
-    cv::Point anchor = cv::Point(-1, -1);
-    int kernel_size = 5;
-    double delta = 0;
-    int ddepth = -1;
 
-    
     // do work here
     try
     {
@@ -71,7 +75,7 @@ int main(int argc, char** argv)
 
         cv_window = "Mask Image";
         cv::cvtColor(src_img, src_gray, cv::COLOR_BGR2GRAY);
-        cv::threshold(src_gray, mask_img, 120, 255, cv::THRESH_BINARY);
+        cv::threshold(src_gray, mask_img, threshold, max_binary_value, cv::THRESH_BINARY);
         cv::imshow(cv_window, mask_img);
         cv::waitKey(0);
 
@@ -85,10 +89,10 @@ int main(int argc, char** argv)
         cv::imshow(cv_window, blurred_img);
         cv::waitKey(0);
 
+
         // save new images
         cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_blur.jpg", blurred_img);
         cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_mask.jpg", mask_img);
-
     }
     catch(std::exception& e)
     {

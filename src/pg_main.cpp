@@ -40,7 +40,7 @@
 
 // global variables //
 int const threshold = 120;
-int const max_binary_value = 255;
+int const max_binary_value = 1;
 
 // initialize parameters for filter2D
 int const kernel_size = 5;
@@ -48,6 +48,79 @@ double const delta = 0;
 int const ddepth = -1;
 cv::Point anchor = cv::Point(-1, -1);
 
+
+
+void replace_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask)
+{
+    std::cout << "Inside replace_method" << std::endl;
+
+    dst.create(src_blur.rows, src_img.cols, CV_8UC3);
+
+    uint8_t* blurred_pixel_ptr = (uint8_t*)src_blur.data;
+    uint8_t* source_pixel_ptr = (uint8_t*)src_img.data;
+    uint8_t* pixelPtr = (uint8_t*)dst.data;
+    int cn = src_img.channels();
+
+    for (int i = 0; i < src_img.rows; i++)
+    {
+        for (int j = 0; j < src_img.cols; j++)
+        {
+            if ((int)mask.at<uchar>(i, j) == 1) {
+                pixelPtr[i * src_img.cols * cn + j * cn + 0] = blurred_pixel_ptr[i * src_img.cols * cn + j * cn + 0];
+                pixelPtr[i * src_img.cols * cn + j * cn + 1] = blurred_pixel_ptr[i * src_img.cols * cn + j * cn + 1];
+                pixelPtr[i * src_img.cols * cn + j * cn + 2] = blurred_pixel_ptr[i * src_img.cols * cn + j * cn + 2];
+            } 
+            else 
+            {
+                pixelPtr[i * src_img.cols * cn + j * cn + 0] = source_pixel_ptr[i * src_img.cols * cn + j * cn + 0];
+                pixelPtr[i * src_img.cols * cn + j * cn + 1] = source_pixel_ptr[i * src_img.cols * cn + j * cn + 1];
+                pixelPtr[i * src_img.cols * cn + j * cn + 2] = source_pixel_ptr[i * src_img.cols * cn + j * cn + 2];
+            }
+        }
+    }
+}
+
+
+void copy_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask) 
+{
+
+    std::cout << "Inside mask_method" << std::endl;
+    
+    dst.create(src_blur.rows, src_img.cols, CV_8UC3);
+    
+    cv::Mat mask_inv;
+    cv::bitwise_not(mask, mask_inv);
+    cv::subtract(mask_inv, 254, mask_inv);
+    
+    // masked images
+    cv::Mat original_img_mask_0;
+    cv::copyTo(src_img, original_img_mask_0, mask_inv);
+    
+    cv::Mat blurred_img_mask_1;
+    cv::copyTo(src_blur, blurred_img_mask_1, mask);
+
+    // combine both masked images
+    cv::add(original_img_mask_0, blurred_img_mask_1, dst);
+}
+
+void matrix_mult_method(cv::Mat &src_img, cv::Mat &src_blur, cv::Mat &dst, cv::Mat mask) 
+{
+    std::cout << "Inside linear_alg_method" << std::endl;
+
+    cv::Mat prod1, prod2, mask_inv;
+    dst.create(src_blur.rows, src_img.cols, CV_8UC3);
+
+    cv::Mat mask_3C;
+    cv::cvtColor(mask, mask_3C, cv::COLOR_GRAY2BGR);  //3 channel mask
+
+    cv::bitwise_not(mask_3C, mask_inv);
+    cv::subtract(mask_inv, 254, mask_inv);
+
+    cv::multiply(src_img, mask_inv, prod1);
+    cv::multiply(src_blur, mask_3C, prod2);
+
+    cv::add(prod1, prod2, dst);
+}
 
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
@@ -58,115 +131,43 @@ int main(int argc, char** argv)
     cv::Mat mask;
     cv::Mat mask_inv;
 
+    // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
+    std::string test_file = "C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L.jpg";
+
+    if (argc > 1)
+        test_file = argv[1];
+
+    std::cout << "Path to image " << test_file << std::endl;
 
     // do work here
     try
     {
-        // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
-        std::string test_file = "C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L.jpg";
-        if (argc > 1) 
-            test_file = argv[1];
-        
-        std::cout << "Path to image " << test_file << std::endl;
         src_img = cv::imread(test_file, cv::IMREAD_COLOR);
-        
         
         std::string cv_window = "Original Image";
         cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
         cv::imshow(cv_window, src_img);
         cv::waitKey(0);
 
-
+        
+        // blurred image
         cv::Size ksize = cv::Size(kernel_size, kernel_size);
         bool normalize = true;
-
-        cv_window = "Blurred Image";
         cv::boxFilter(src_img, src_blur, ddepth, ksize, anchor, normalize, cv::BORDER_DEFAULT);
-        cv::imshow(cv_window, src_blur);
-        cv::waitKey(0);
-
-
-        // CREATE MASKS //
-        cv_window = "Mask Image";
+        
+        // creating mask with values between [0, 1]
         cv::cvtColor(src_img, src_gray, cv::COLOR_BGR2GRAY);
         cv::threshold(src_gray, mask, threshold, max_binary_value, cv::THRESH_BINARY);
-        cv::imshow(cv_window, mask);
+             
+
+        cv::Mat dst;
+        matrix_mult_method(src_img, src_blur, dst, mask);
+
+        cv_window = "New Image";
+        cv::imshow(cv_window, dst);
         cv::waitKey(0);
 
-        cv_window = "Mask Inverted Image";
-        cv::bitwise_not(mask, mask_inv);
-        cv::imshow(cv_window, mask_inv);
-        cv::waitKey(0);
-
-        // CREATE MASKED IMAGES // 
-        cv::Mat original_img_mask_0;
-        cv_window = "Original Imaged Where Mask is 0";
-        cv::copyTo(src_img, original_img_mask_0, mask_inv);
-        cv::imshow(cv_window, original_img_mask_0);
-        cv::waitKey(0);
-
-        cv::Mat blurred_img_mask_1;
-        cv_window = "Blurred Imaged Where Mask is 1";
-        cv::copyTo(src_blur, blurred_img_mask_1, mask);
-        cv::imshow(cv_window, blurred_img_mask_1);
-        cv::waitKey(0);
-
-        // COMBINE BOTH MASKED IMAGES ///
-        cv::Mat result_img;
-        cv_window = "Original and Blurred Image Combined!!!!";
-        cv::add(original_img_mask_0, blurred_img_mask_1, result_img);
-        cv::imshow(cv_window, result_img);
-        cv::waitKey(0);
-
-        // DISPLAY BOTH SOURCE AND RESULTING IMAGE BY CONCAT. //
-        cv::Mat concat_imgs;
-        cv::hconcat(src_img, result_img, concat_imgs);
-        cv::imshow("You already know", concat_imgs);
-        cv::waitKey(0);
-
-        //std::cout << "mask: " << mask.rows << " " << mask.cols << std::endl;
-        //std::cout << "source: " << src_img.rows << " " << src_img.cols << std::endl;
-
-        uint8_t* blurred_pixel_ptr = (uint8_t*)src_blur.data;
-        uint8_t* pixelPtr = (uint8_t*)src_img.data;
-        int cn = src_img.channels();
-        cv::Scalar_<uint8_t> bgrPixel;
-
-        for (int i = 0; i < src_img.rows; i++)
-        {
-            for (int j = 0; j < src_img.cols; j++)
-            {
-                //bgrPixel.val[0] = pixelPtr[i * src_img.cols * cn + j * cn + 0]; // B
-                //bgrPixel.val[1] = pixelPtr[i * src_img.cols * cn + j * cn + 1]; // G
-                //bgrPixel.val[2] = pixelPtr[i * src_img.cols * cn + j * cn + 2]; // R
-
-                // do something with BGR values...
-
-                if ((int)mask.at<uchar>(i, j) == 255) {
-                    pixelPtr[i * src_img.cols * cn + j * cn + 0] = blurred_pixel_ptr[i * src_img.cols * cn + j * cn + 0];
-                    pixelPtr[i * src_img.cols * cn + j * cn + 1] = blurred_pixel_ptr[i * src_img.cols * cn + j * cn + 1];
-                    pixelPtr[i * src_img.cols * cn + j * cn + 2] = blurred_pixel_ptr[i * src_img.cols * cn + j * cn + 2];
-                }
-            }
-        }
-
-        cv_window = "Original Image";
-        cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-        cv::imshow(cv_window, src_img);
-        cv::waitKey(0);
-
-        cv::Mat both_methods;
-        cv::hconcat(result_img, src_img, both_methods);
-        cv::imshow("Comparing both methods!", both_methods);
-        cv::waitKey(0);
-
-
-        // save new images
-        //cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/mask.jpg", mask);
-        //cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/mask_inv.jpg", mask_inv);
-        //cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_blur.jpg", src_blur);
-        //cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_masked.jpg", masked_blurred);
-        //cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_masked_inv.jpg", masked_org);
+        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_NEW.jpg", dst);
     }
     catch(std::exception& e)
     {

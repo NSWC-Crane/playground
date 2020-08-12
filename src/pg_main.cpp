@@ -42,48 +42,10 @@
 int const threshold = 120;
 int const max_binary_value = 1;
 
-// initialize parameters for filter2D
-int const kernel_size = 5;
-double const delta = 0;
-int const ddepth = -1;
-cv::Point anchor = cv::Point(-1, -1);
 
 
-
-void replace_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask)
+void replace_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask) 
 {
-    std::cout << "Inside replace_method" << std::endl;
-
-    dst.create(src_blur.rows, src_img.cols, CV_8UC3);
-
-    uint8_t* blurred_pixel_ptr = (uint8_t*)src_blur.data;
-    uint8_t* source_pixel_ptr = (uint8_t*)src_img.data;
-    uint8_t* pixelPtr = (uint8_t*)dst.data;
-    int cn = src_img.channels();
-
-    for (int i = 0; i < src_img.rows; i++)
-    {
-        for (int j = 0; j < src_img.cols; j++)
-        {
-            if ((int)mask.at<uchar>(i, j) == 1) {
-                pixelPtr[i * src_img.cols * cn + j * cn + 0] = blurred_pixel_ptr[i * src_img.cols * cn + j * cn + 0];
-                pixelPtr[i * src_img.cols * cn + j * cn + 1] = blurred_pixel_ptr[i * src_img.cols * cn + j * cn + 1];
-                pixelPtr[i * src_img.cols * cn + j * cn + 2] = blurred_pixel_ptr[i * src_img.cols * cn + j * cn + 2];
-            } 
-            else 
-            {
-                pixelPtr[i * src_img.cols * cn + j * cn + 0] = source_pixel_ptr[i * src_img.cols * cn + j * cn + 0];
-                pixelPtr[i * src_img.cols * cn + j * cn + 1] = source_pixel_ptr[i * src_img.cols * cn + j * cn + 1];
-                pixelPtr[i * src_img.cols * cn + j * cn + 2] = source_pixel_ptr[i * src_img.cols * cn + j * cn + 2];
-            }
-        }
-    }
-}
-
-
-void copy_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask) 
-{
-
     std::cout << "Inside mask_method" << std::endl;
     
     dst.create(src_blur.rows, src_img.cols, CV_8UC3);
@@ -103,7 +65,7 @@ void copy_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask)
     cv::add(original_img_mask_0, blurred_img_mask_1, dst);
 }
 
-void matrix_mult_method(cv::Mat &src_img, cv::Mat &src_blur, cv::Mat &dst, cv::Mat mask) 
+void matrix_mult_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask) 
 {
     std::cout << "Inside linear_alg_method" << std::endl;
 
@@ -125,53 +87,65 @@ void matrix_mult_method(cv::Mat &src_img, cv::Mat &src_blur, cv::Mat &dst, cv::M
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-    cv::Mat src_img;
-    cv::Mat src_gray;
-    cv::Mat src_blur;
-    cv::Mat mask;
-    cv::Mat mask_inv;
 
     // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
-    std::string test_file = "C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L.jpg";
+    std::string checker_file = "C:/Users/Javier/Documents/Projects/playground/images/checkerboard_10x10.png";
 
     if (argc > 1)
-        test_file = argv[1];
+        checker_file = argv[1];
 
-    std::cout << "Path to image " << test_file << std::endl;
+    std::cout << "Path to image " << checker_file << std::endl;
 
     // do work here
     try
     {
-        src_img = cv::imread(test_file, cv::IMREAD_COLOR);
+        cv::Mat checker_img = cv::imread(checker_file, cv::IMREAD_COLOR);
         
-        std::string cv_window = "Original Image";
+        std::string cv_window = "Checkerboard Image";
         cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-        cv::imshow(cv_window, src_img);
+        cv::imshow(cv_window, checker_img);
         cv::waitKey(0);
-
         
-        // blurred image
-        cv::Size ksize = cv::Size(kernel_size, kernel_size);
-        bool normalize = true;
-        cv::boxFilter(src_img, src_blur, ddepth, ksize, anchor, normalize, cv::BORDER_DEFAULT);
+        // initialize parameters for cv::circle
+        cv::Point point = cv::Point(600, 200);
+        int raduis = 60;
+        cv::Scalar color = cv::Scalar(255, 155, 140);
+        int thickness = -1;
         
-        // creating mask with values between [0, 1]
-        cv::cvtColor(src_img, src_gray, cv::COLOR_BGR2GRAY);
-        cv::threshold(src_gray, mask, threshold, max_binary_value, cv::THRESH_BINARY);
-             
+        // draw circle on top of image
+        cv::circle(checker_img, point, 100, color, thickness);
 
+        // create masks 
+        cv::Mat mask, mask_inv;
+        cv::inRange(checker_img, color, color, mask);
+        cv::bitwise_not(mask, mask_inv);
+        cv::divide(255, mask, mask, -1);
+        cv::divide(255, mask_inv, mask_inv, -1);
+
+        //cv::Mat out;
+        //cv::boxFilter(mask, out, -1, cv::Size(4, 4), cv::Point(-1, -1) , true); type is unsigned int8
+
+        // initialize parameters for cv::boxFilter
+        cv::Mat filter_mask;
+        int ddepth = -1;
+        int kernel_size = 10;
+        point = cv::Point(-1, -1);
+        cv::Size ksize = cv::Size(3, 3);
+
+        cv::Mat mask_filter, mask_inv_filter;
+        cv::boxFilter(checker_img, mask_filter, ddepth, cv::Size(18, 18), point, true);
+        cv::boxFilter(checker_img, mask_inv_filter, ddepth, cv::Size(5, 5), point, true);
+
+        cv::Mat mat1, mat2;
+        cv::copyTo(mask_filter, mat1, mask);
+        cv::copyTo(mask_inv_filter, mat2, mask_inv);
         cv::Mat dst;
-        matrix_mult_method(src_img, src_blur, dst, mask);
+        cv::add(mat1, mat2, dst);
 
-        cv_window = "New Image";
-        cv::imshow(cv_window, dst);
-        cv::waitKey(0);
-
-        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/4ZSWD4L_NEW.jpg", dst);
+        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/checkerboard_blurred.jpg", dst);
     }
     catch(std::exception& e)
     {
-
         std::cout << "Error: " << e.what() << std::endl;
     }
 

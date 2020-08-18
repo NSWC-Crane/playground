@@ -90,7 +90,7 @@ int main(int argc, char** argv)
 
     // initialize parameters for cv::circle
     cv::Point point = cv::Point(600, 200);
-    int raduis = rand() % 50 + 100;
+    int raduis = rand() % 50 + 55;
     cv::Scalar color = cv::Scalar(0.45, 0.65, 0.34);
     int thickness = -1;
 
@@ -115,46 +115,60 @@ int main(int argc, char** argv)
         cv::Mat checkboard_blur;
         cv::boxFilter(checkboard_img, checkboard_blur, -1, cv::Size(5, 5), cv::Point(-1, -1), true); 
 
-        // clone blurred image and overlay shape
+        // clone blurred image 
         cv::Mat checkboard_blur_copy = checkboard_blur.clone();
-        cv::circle(checkboard_blur, point, raduis, color, thickness);
 
 
-        
-        // create mask 
-        cv::Mat mask;
-        cv::inRange(checkboard_blur, color, color, mask);
-        
-        // convert mask to CV_32F
-        cv::Mat mask_blur, mask_inv_blur;
-        mask.convertTo(mask_blur, CV_32FC1, 1 / 255.0);
+        cv::Scalar colors[] = { cv::Scalar(0.45, 0.65, 0.34), cv::Scalar(0.32, 0.13, 0.69), cv::Scalar(0.79, 0.48, 0.25) };
+        cv::Size filter_dimensions[] = { cv::Size(5, 5), cv::Size(7, 7), cv::Size(3, 3) };
+        cv::Point center[] = { cv::Point(600, 200), cv::Point(300, 500), cv::Point(0, 450) };
 
-        // apply 9x9 convolution
-        cv::boxFilter(mask_blur, mask_blur, -1, cv::Size(9, 9), cv::Point(-1, -1), true);
+        cv::Mat masks[3];
+        cv::Mat blurred_imgs[3];
 
-        // create (1-mask)
-        cv::Scalar ones_scalar = cv::Scalar(1, 1, 1);
-        cv::subtract(ones_scalar, mask_blur, mask_inv_blur);
+        cv::Mat tmp, mask_blurred;
+        for (int i = 0; i < 3; i++) {
+            
+            cv::circle(checkboard_blur, center[i], raduis, colors[i], thickness);
 
-        // create 3 channel masks for background + foreground
-        cv::Mat background_mask;
-        cv::Mat in_bg[] = { mask_inv_blur, mask_inv_blur, mask_inv_blur };
-        cv::merge(in_bg, 3, background_mask);
+            cv::inRange(checkboard_blur, colors[i], colors[i], masks[i]);
 
-        cv::Mat foreground_mask;
-        cv::Mat in_fg[] = { mask_blur, mask_blur, mask_blur };
-        cv::merge(in_fg, 3, foreground_mask);
+            cv::boxFilter(checkboard_blur, tmp, -1, filter_dimensions[i], cv::Point(-1, -1), true);
+
+            // convert to CV_32FC1
+            masks[i].convertTo(mask_blurred, CV_32FC1, 1 / 255.0);
+            
+            cv::boxFilter(mask_blurred, mask_blurred, -1, filter_dimensions[i], cv::Point(-1, -1), true);
+
+            // merge for 3 channels
+            cv::Mat in_bg[] = { mask_blurred,mask_blurred, mask_blurred };
+            cv::merge(in_bg, 3, masks[i]);
+
+            cv::multiply(tmp, masks[i], blurred_imgs[i]);
+        }
 
 
-        // apply 9x9 convolution on checkboard img with overlayed shape
-        cv::boxFilter(checkboard_blur, checkboard_blur, -1, cv::Size(9, 9), cv::Point(-1, -1), true);
+        cv::Mat foreground_mask(600, 800, CV_32FC3, cv::Scalar(0,0,0));
+        for (int i = 0; i < 3; i++) {
+            cv::add(foreground_mask, masks[i], foreground_mask);
+        }
 
-        // 3C masks and images element wise multiplication
-        cv::Mat background, foreground;
-        cv::multiply(checkboard_blur_copy, background_mask, background);
-        cv::multiply(checkboard_blur, foreground_mask, foreground);
+        cv::Mat background_mask, background;
+        cv::subtract(cv::Scalar(1, 1, 1), foreground_mask, background_mask);
+        cv::multiply(background_mask, checkboard_blur_copy, background);
 
-        // display background (5x5 filter) and foreground (9x9 filter) 
+
+        cv::Mat foreground(600, 800, CV_32FC3, cv::Scalar(0, 0, 0));
+        for (int i = 0; i < 3; i++) {
+            cv::add(foreground, blurred_imgs[i], foreground);
+        }
+
+
+        cv::Mat dst;
+        cv::add(background, foreground, dst);
+
+
+        // display background and foreground 
         std::string cv_window = "Background";
         cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
         cv::imshow(cv_window, background);
@@ -165,10 +179,6 @@ int main(int argc, char** argv)
         cv::imshow(cv_window, foreground);
         cv::waitKey(0);
 
-        // add both background and foreground
-        cv::Mat dst;
-        cv::add(background, foreground, dst);
-
         // display combined image
         cv_window = "Background + Foreground";
         cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
@@ -176,11 +186,11 @@ int main(int argc, char** argv)
         cv::waitKey(0);
 
         // convert dst image to CV_8UC3
-        cv::multiply(dst, cv::Scalar(1, 1, 1), dst, 255);
-        dst.convertTo(dst, CV_8UC3); // use alpha parameter to scale 
+        cv::Mat dst_save;
+        dst.convertTo(dst_save, CV_8UC3, 255); // use alpha parameter to scale 
 
         // save new image
-        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/checkerboard_blurred.jpg", dst);
+        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/checkerboard_blurred.jpg", dst_save);
     }
     catch(std::exception& e)
     {

@@ -38,11 +38,6 @@
 // custom includes
 
 
-// global variables //
-int const threshold = 120;
-int const max_binary_value = 1;
-
-
 
 void replace_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask) 
 {
@@ -84,14 +79,13 @@ void matrix_mult_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat
     cv::add(prod1, prod2, dst);
 }
 
+
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
 
     // initialize parameters for cv::circle
-    cv::Point point = cv::Point(600, 200);
     int raduis = rand() % 50 + 55;
-    cv::Scalar color = cv::Scalar(0.45, 0.65, 0.34);
     int thickness = -1;
 
     // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
@@ -113,15 +107,15 @@ int main(int argc, char** argv)
 
         // apply 5x5 convolution
         cv::Mat checkboard_blur;
-        cv::boxFilter(checkboard_img, checkboard_blur, -1, cv::Size(5, 5), cv::Point(-1, -1), true); 
+        cv::boxFilter(checkboard_img, checkboard_blur, -1, cv::Size(12, 12), cv::Point(-1, -1), true); 
 
         // clone blurred image 
         cv::Mat checkboard_blur_copy = checkboard_blur.clone();
 
 
         cv::Scalar colors[] = { cv::Scalar(0.45, 0.65, 0.34), cv::Scalar(0.32, 0.13, 0.69), cv::Scalar(0.79, 0.48, 0.25) };
-        cv::Size filter_dimensions[] = { cv::Size(5, 5), cv::Size(7, 7), cv::Size(3, 3) };
-        cv::Point center[] = { cv::Point(600, 200), cv::Point(300, 500), cv::Point(0, 450) };
+        cv::Size filter_dimensions[] = { cv::Size(30, 30), cv::Size(20, 20), cv::Size(3, 3) };
+        cv::Point center[] = { cv::Point(rand() % 300 + 300, 200), cv::Point(300, 500), cv::Point(rand() % 400 + 300, 450) };
 
         cv::Mat masks[3];
         cv::Mat blurred_imgs[3];
@@ -129,7 +123,7 @@ int main(int argc, char** argv)
         cv::Mat tmp, mask_blurred;
         for (int i = 0; i < 3; i++) {
             
-            cv::circle(checkboard_blur, center[i], raduis, colors[i], thickness);
+            cv::circle(checkboard_blur, center[i], rand() % 100 + 150, colors[i], thickness);
 
             cv::inRange(checkboard_blur, colors[i], colors[i], masks[i]);
 
@@ -188,6 +182,9 @@ int main(int argc, char** argv)
         // convert dst image to CV_8UC3
         cv::Mat dst_save;
         dst.convertTo(dst_save, CV_8UC3, 255); // use alpha parameter to scale 
+
+        cv::Mat final;
+        cv::hconcat(foreground_mask, dst, final);
 
         // save new image
         cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/checkerboard_blurred.jpg", dst_save);

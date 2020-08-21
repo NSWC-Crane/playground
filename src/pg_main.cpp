@@ -113,17 +113,22 @@ int main(int argc, char** argv)
         cv::Mat checkboard_blur_copy = checkboard_blur.clone();
 
 
-        cv::Scalar colors[] = { cv::Scalar(0.45, 0.65, 0.34), cv::Scalar(0.32, 0.13, 0.69), cv::Scalar(0.79, 0.48, 0.25) };
-        cv::Size filter_dimensions[] = { cv::Size(30, 30), cv::Size(20, 20), cv::Size(3, 3) };
-        cv::Point center[] = { cv::Point(rand() % 300 + 300, 200), cv::Point(300, 500), cv::Point(rand() % 400 + 300, 450) };
+        const int len_data = 4;
+        cv::Scalar colors[] = { cv::Scalar(0.45, 0.65, 0.34), cv::Scalar(0.32, 0.13, 0.69), 
+                        cv::Scalar(0.79, 0.48, 0.25), cv::Scalar(0.32, 0.13, 0.69) };
+        cv::Size filter_dimensions[] = { cv::Size(30, 30), cv::Size(20, 20), cv::Size(3, 3), cv::Size(20, 20) };
+        cv::Point center[] = { cv::Point(rand() % 300 + 300, 200), cv::Point(300, 500), 
+                        cv::Point(rand() % 400 + 300, 450), cv::Point(100, 350) };
 
-        cv::Mat masks[3];
-        cv::Mat blurred_imgs[3];
+        cv::Mat masks[len_data];
+        cv::Mat blurred_imgs[len_data];
 
         cv::Mat tmp, mask_blurred;
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < len_data; i++) {
             
-            cv::circle(checkboard_blur, center[i], rand() % 100 + 150, colors[i], thickness);
+            if(i == 2)
+                cv::circle(checkboard_blur, center[i], rand() % 50 + 55, colors[i], thickness);
+            cv::circle(checkboard_blur, center[i], rand() % 100 + 100, colors[i], thickness);
 
             cv::inRange(checkboard_blur, colors[i], colors[i], masks[i]);
 
@@ -143,7 +148,10 @@ int main(int argc, char** argv)
 
 
         cv::Mat foreground_mask(600, 800, CV_32FC3, cv::Scalar(0,0,0));
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < len_data; i++) {
+            cv::Mat tmp_fg;
+            cv::multiply(foreground_mask, masks[i], tmp_fg);
+            cv::subtract(foreground_mask, tmp_fg, foreground_mask);
             cv::add(foreground_mask, masks[i], foreground_mask);
         }
 
@@ -153,7 +161,10 @@ int main(int argc, char** argv)
 
 
         cv::Mat foreground(600, 800, CV_32FC3, cv::Scalar(0, 0, 0));
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < len_data; i++) {
+            cv::Mat tmp_fg;
+            cv::multiply(foreground, masks[i], tmp_fg);
+            cv::subtract(foreground, tmp_fg, foreground);
             cv::add(foreground, blurred_imgs[i], foreground);
         }
 

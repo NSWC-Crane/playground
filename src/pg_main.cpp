@@ -36,6 +36,7 @@
 #include <opencv2/imgcodecs.hpp>
 
 // custom includes
+#include "Header1.h"
 
 
 
@@ -80,79 +81,19 @@ void matrix_mult_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat
 }
 
 
-/*
-This function will take a base image and overlay a set of shapes and then blur them according to the sigma value
-
-@param src input image that will be modified and returned.  This image should be CV_32FC3 type
-@param rng random number generator object
-@param sigma value that determines the blur kernel properties
-@param scale optional parameter to determine the size of the object
-*/
-void blur_layer(cv::Mat& src, 
-    cv::RNG& rng,
-    double sigma,
-    double scale = 0.3)
-{
-
-    // get the image dimensions for other uses
-    int nr = src.rows;
-    int nc = src.cols;
-
-    // clone the source image
-    cv::Mat src_clone = src.clone();
-
-    // create the inital blank mask
-    cv::Mat BM_1 = cv::Mat(src.size(), CV_32FC3, cv::Scalar::all(0.0));
-
-    // generate a random color 
-    cv::Scalar C = (1.0 / 255.0) * cv::Scalar(rng.uniform(0, 256), rng.uniform(0, 256), rng.uniform(0, 256));
-
-    // generate a random point within the image using the cv::RNG uniform funtion (use nr,nc)
-
-
-    // generate the random radius values for an ellipse using one of the RNG functions
-    
-
-    // generate a random angle between 0 and 360 degrees for the ellipse using one of the RNG functions
-
-
-    // use the cv::ellipse function and the random points to generate a random ellipse on top of the src_clone image
-
-
-    // use the same points to generate the same ellipse on the mask with color = CV::Scalar(1.0, 1.0, 1.0)
-
-
-    // blur the src_clone image with the overlay and blur the mask image using the sigma value to determine the blur kernel size
-
-
-
-    // multiply the src image times (cv::Scalar(1.0, 1.0, 1.0) - BM_1)
-    cv::Mat L1_1;
-
-    // multiply the src_clone image times BM_1
-    cv::Mat L1_2;
-
-    // set src equal to L1_1 + L1_2
-
-
-}   // end of blur_layer 
-
 
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-
-    // initialize parameters for cv::circle
-    int raduis = rand() % 50 + 55;
-    int thickness = -1;
-
     cv::RNG rng(1234567);
 
     // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
     std::string checker_file = "C:/Users/Javier/Documents/Projects/playground/images/checkerboard_10x10.png";
 
-    if (argc > 1)
+    if (argc > 1) 
+    {
         checker_file = argv[1];
+    }
 
     std::cout << "Path to image " << checker_file << std::endl;
 
@@ -161,101 +102,28 @@ int main(int argc, char** argv)
     {
         cv::Mat checker_img = cv::imread(checker_file, cv::IMREAD_COLOR);
 
-        // convert data type to 16 bit float
+        // convert data type to 32 bit float
         cv::Mat checkboard_img(600, 800, CV_32FC3);
         checker_img.convertTo(checkboard_img, CV_32FC3, 1/255.0); // CV_32F are from 0.0 to 1.0
 
-        // apply 5x5 convolution
-        cv::Mat checkboard_blur;
-        cv::boxFilter(checkboard_img, checkboard_blur, -1, cv::Size(12, 12), cv::Point(-1, -1), true); 
-
-        // clone blurred image 
-        cv::Mat checkboard_blur_copy = checkboard_blur.clone();
+        const int len_data = 8;
+        double kernel_params[] = { 5, 25, 30, 8, 
+                                   5, 25, 30, 8 };
 
 
-        const int len_data = 4;
-        cv::Scalar colors[] = { cv::Scalar(0.45, 0.65, 0.34), cv::Scalar(0.32, 0.13, 0.69), 
-                        cv::Scalar(0.79, 0.48, 0.25), cv::Scalar(0.32, 0.13, 0.69) };
-        cv::Size filter_dimensions[] = { cv::Size(30, 30), cv::Size(20, 20), cv::Size(3, 3), cv::Size(20, 20) };
-        cv::Point center[] = { cv::Point(rand() % 300 + 300, 200), cv::Point(300, 500), 
-                        cv::Point(rand() % 400 + 300, 450), cv::Point(100, 350) };
-
-        cv::Mat masks[len_data];
-        cv::Mat blurred_imgs[len_data];
-
-        cv::Mat tmp, mask_blurred;
         for (int i = 0; i < len_data; i++) {
-            
-            if(i == 2)
-                cv::circle(checkboard_blur, center[i], rand() % 50 + 55, colors[i], thickness);
-            cv::circle(checkboard_blur, center[i], rand() % 100 + 100, colors[i], thickness);
-
-            cv::inRange(checkboard_blur, colors[i], colors[i], masks[i]);
-
-            cv::boxFilter(checkboard_blur, tmp, -1, filter_dimensions[i], cv::Point(-1, -1), true);
-
-            // convert to CV_32FC1
-            masks[i].convertTo(mask_blurred, CV_32FC1, 1 / 255.0);
-            
-            cv::boxFilter(mask_blurred, mask_blurred, -1, filter_dimensions[i], cv::Point(-1, -1), true);
-
-            // merge for 3 channels
-            cv::Mat in_bg[] = { mask_blurred,mask_blurred, mask_blurred };
-            cv::merge(in_bg, 3, masks[i]);
-
-            cv::multiply(tmp, masks[i], blurred_imgs[i]);
+            blur_layer(checkboard_img, rng, kernel_params[i]);
         }
 
-
-        cv::Mat foreground_mask(600, 800, CV_32FC3, cv::Scalar(0,0,0));
-        for (int i = 0; i < len_data; i++) {
-            cv::Mat tmp_fg;
-            cv::multiply(foreground_mask, masks[i], tmp_fg);
-            cv::subtract(foreground_mask, tmp_fg, foreground_mask);
-            cv::add(foreground_mask, masks[i], foreground_mask);
-        }
-
-        cv::Mat background_mask, background;
-        cv::subtract(cv::Scalar(1, 1, 1), foreground_mask, background_mask);
-        cv::multiply(background_mask, checkboard_blur_copy, background);
-
-
-        cv::Mat foreground(600, 800, CV_32FC3, cv::Scalar(0, 0, 0));
-        for (int i = 0; i < len_data; i++) {
-            cv::Mat tmp_fg;
-            cv::multiply(foreground, masks[i], tmp_fg);
-            cv::subtract(foreground, tmp_fg, foreground);
-            cv::add(foreground, blurred_imgs[i], foreground);
-        }
-
-
-        cv::Mat dst;
-        cv::add(background, foreground, dst);
-
-
-        // display background and foreground 
-        std::string cv_window = "Background";
+        
+        std::string cv_window = "Final Image";
         cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-        cv::imshow(cv_window, background);
-        cv::waitKey(0);
-
-        cv_window = "Foreground";
-        cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-        cv::imshow(cv_window, foreground);
-        cv::waitKey(0);
-
-        // display combined image
-        cv_window = "Background + Foreground";
-        cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-        cv::imshow(cv_window, dst);
+        cv::imshow(cv_window, checkboard_img);
         cv::waitKey(0);
 
         // convert dst image to CV_8UC3
         cv::Mat dst_save;
-        dst.convertTo(dst_save, CV_8UC3, 255); // use alpha parameter to scale 
-
-        cv::Mat final;
-        cv::hconcat(foreground_mask, dst, final);
+        checkboard_img.convertTo(dst_save, CV_8UC3, 255); // use alpha parameter to scale 
 
         // save new image
         cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/checkerboard_blurred.jpg", dst_save);

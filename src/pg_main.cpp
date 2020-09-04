@@ -36,41 +36,19 @@
 #include <opencv2/imgcodecs.hpp>
 
 // custom includes
-#include "Header1.h"
+#include <cv_blur_process.h>
+#include <cv_random_image_gen.h>
 
 
 
-void replace_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask) 
+void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mask) 
 {
-    std::cout << "Inside mask_method" << std::endl;
-    
-    dst.create(src_blur.rows, src_img.cols, CV_8UC3);
-    
-    cv::Mat mask_inv;
-    cv::bitwise_not(mask, mask_inv);
-    cv::subtract(mask_inv, 254, mask_inv);
-    
-    // masked images
-    cv::Mat original_img_mask_0;
-    cv::copyTo(src_img, original_img_mask_0, mask_inv);
-    
-    cv::Mat blurred_img_mask_1;
-    cv::copyTo(src_blur, blurred_img_mask_1, mask);
-
-    // combine both masked images
-    cv::add(original_img_mask_0, blurred_img_mask_1, dst);
-}
-
-void matrix_mult_method(cv::Mat src_img, cv::Mat src_blur, cv::Mat &dst, cv::Mat mask) 
-{
-    std::cout << "Inside linear_alg_method" << std::endl;
-
-    cv::Mat prod1, prod2, mask_inv;
     dst.create(src_blur.rows, src_img.cols, CV_8UC3);
 
     cv::Mat mask_3C;
     cv::cvtColor(mask, mask_3C, cv::COLOR_GRAY2BGR);  //3 channel mask
 
+    cv::Mat prod1, prod2, mask_inv;
     cv::bitwise_not(mask_3C, mask_inv);
     cv::subtract(mask_inv, 254, mask_inv);
 
@@ -87,9 +65,14 @@ int main(int argc, char** argv)
 {
     cv::RNG rng(1234567);
 
-    // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
-    std::string checker_file = "C:/Users/Javier/Documents/Projects/playground/images/checkerboard_10x10.png";
+    cv::Mat img;
+    cv::Mat mask;
 
+    generate_random_overlay(cv::Size(600, 800), rng, 50, img, mask);
+
+    // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
+    std::string checker_file = "../images/checkerboard_10x10.png"; 
+    
     if (argc > 1) 
     {
         checker_file = argv[1];
@@ -111,7 +94,8 @@ int main(int argc, char** argv)
                                    5, 25, 30, 8 };
 
 
-        for (int i = 0; i < len_data; i++) {
+        for (int i = 0; i < len_data; i++) 
+        {
             blur_layer(checkboard_img, rng, kernel_params[i]);
         }
 
@@ -126,7 +110,7 @@ int main(int argc, char** argv)
         checkboard_img.convertTo(dst_save, CV_8UC3, 255); // use alpha parameter to scale 
 
         // save new image
-        cv::imwrite("C:/Users/Javier/Documents/Projects/playground/images/checkerboard_blurred.jpg", dst_save);
+        cv::imwrite("../images/checkerboard_blurred.jpg", dst_save);
     }
     catch(std::exception& e)
     {

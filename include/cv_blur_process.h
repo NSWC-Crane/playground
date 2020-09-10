@@ -79,12 +79,11 @@ inline void blur_layer(cv::Mat& src,
 void generate_random_mask(cv::Mat& output_mask,
     cv::Size img_size,
     cv::RNG& rng,
-    uint32_t num_shapes)
+    uint32_t num_shapes,
+    double scale = 0.1)
 {
 
     unsigned int idx;
-
-    double scale = 0.3;
 
     int nr = img_size.width;
     int nc = img_size.height;
@@ -195,7 +194,7 @@ void generate_random_overlay(cv::Size img_size,
     uint32_t N = img_size.height * img_size.width * 0.004;
     
     // define the scale factor
-    double scale = 60 / img_size.width;
+    double scale = 60 / (double)img_size.width;
 
     // generate random image
     cv::Mat random_img;

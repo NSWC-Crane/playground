@@ -7,10 +7,11 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/calib3d.hpp>
 
 #include <cv_random_image_gen.h>
 
-
+#include <math.h>
 
 /*
 This function will take a base image and overlay a set of shapes and then blur them according to the sigma value
@@ -208,6 +209,80 @@ void generate_random_overlay(cv::Size img_size,
     cv::multiply(random_img, output_mask, output_img);
 
 } // end of generate_random_overlay
+
+
+//void distortion(cv::Mat src,
+//    cv::Mat& dst)
+//{
+//    dst = cv::Mat(src.rows, src.cols, CV_8U, cv::Scalar::all(255));
+//
+//    cv::Mat cameraMatrix = cv::Mat::eye(cv::Size(3, 3), CV_32F);
+//    cameraMatrix.at<float>(0, 0) = 40.0;
+//    cameraMatrix.at<float>(1, 1) = 40.0;
+//    cameraMatrix.at<float>(0, 2) = src.rows / 2.f;
+//    cameraMatrix.at<float>(1, 2) = src.cols / 2.f;
+//    
+//    cv::Mat distortion_coef(1, 4, CV_32F);
+//    distortion_coef.at<float>(0) = -0.001;
+//    distortion_coef.at<float>(1) = 0;
+//    distortion_coef.at<float>(2) = 0;
+//    distortion_coef.at<float>(3) = 0;
+//
+//    cv::fisheye::distortPoints(src, dst, cameraMatrix, distortion_coef);
+//}
+
+
+// https://www.mathworks.com/help/vision/ug/camera-calibration.html
+// http://marcodiiga.github.io/radial-lens-undistortion-filtering
+
+void distortion(cv::Mat src,
+    cv::Mat& dst,
+    int start,
+    int end)
+{
+    dst = cv::Mat(src.rows, src.cols, CV_8U, cv::Scalar::all(255));
+
+    int nr = src.rows;
+    int nc = src.cols;
+
+    // center of distortion
+    int xc = nr / 2;
+    int yc = nc / 2;
+
+    // distortion coefficients
+    float k1 = -0.0009;
+    float k2 = -0.00000008;
+
+    float r;
+    int xd, yd;
+    float xn, yn, xd_f, yd_f;
+
+    for (int x = start; x < end; x++)
+    {
+        for (int y = 0; y < src.cols; y++)
+        {
+            xn = (float)(2 * x - nr) / nr;
+            yn = (float)(2 * y - nc) / nc;
+
+            r = (x - xc) * (x - xc) + (y - yc) * (y - yc);
+            r = sqrt(r);
+
+            xd_f = xn * (1 + k1 * r + k2 * r * r);
+            yd_f = yn * (1 + k1 * r + k2 * r * r);
+
+            xd = (xd_f + 1.0) * nr / 2;
+            yd = (yd_f + 1.0) * nc / 2;
+
+            if (xd < src.rows && xd >= 0 && yd < src.cols && yd >= 0)
+            {
+                dst.at<uint8_t>(xd, yd) = src.at<uint8_t>(x, y);
+            }
+
+        } // end of inner for loop
+    } // end of for loop
+
+} // end of distortion
+
 
 
 #endif // _CV_BLUR_PROCESS_H_

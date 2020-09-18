@@ -27,7 +27,6 @@
 #include <type_traits>
 #include <list>
 
-
 // OpenCV includes
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -59,16 +58,10 @@ void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mas
 }
 
 
-
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
     cv::RNG rng(1234567);
-
-    cv::Mat img;
-    cv::Mat mask;
-
-    generate_random_overlay(cv::Size(600, 800), rng, 50, img, mask);
 
     // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
     std::string checker_file = "../images/checkerboard_10x10.png"; 
@@ -85,29 +78,29 @@ int main(int argc, char** argv)
     {
         cv::Mat checker_img = cv::imread(checker_file, cv::IMREAD_COLOR);
 
+        cv::Mat dist;
+        distortion(checker_img, dist, 0, checker_img.rows-1);
+
+        cv::Mat img, mask;
+        generate_random_overlay(cv::Size(600, 800), rng, 50, img, mask);
+
         // convert data type to 32 bit float
-        cv::Mat checkboard_img(600, 800, CV_32FC3);
-        checker_img.convertTo(checkboard_img, CV_32FC3, 1/255.0); // CV_32F are from 0.0 to 1.0
+        checker_img.convertTo(checker_img, CV_32FC3, 1/255.0); // CV_32F values are from 0.0 to 1.0
 
-        const int len_data = 8;
-        double kernel_params[] = { 5, 25, 30, 8, 
-                                   5, 25, 30, 8 };
-
-
-        for (int i = 0; i < len_data; i++) 
+        for (int i = 0; i < 8; i++) 
         {
-            blur_layer(checkboard_img, rng, kernel_params[i]);
+            blur_layer(checker_img, rng, rng.uniform(0, 60));
         }
-
         
+
         std::string cv_window = "Final Image";
         cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-        cv::imshow(cv_window, checkboard_img);
+        cv::imshow(cv_window, dist);
         cv::waitKey(0);
 
         // convert dst image to CV_8UC3
         cv::Mat dst_save;
-        checkboard_img.convertTo(dst_save, CV_8UC3, 255); // use alpha parameter to scale 
+        checker_img.convertTo(dst_save, CV_8UC3, 255); // use alpha parameter to scale 
 
         // save new image
         cv::imwrite("../images/checkerboard_blurred.jpg", dst_save);

@@ -39,7 +39,6 @@
 #include <cv_random_image_gen.h>
 
 
-
 void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mask) 
 {
     dst.create(src_blur.rows, src_img.cols, CV_8UC3);
@@ -57,10 +56,13 @@ void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mas
     cv::add(prod1, prod2, dst);
 }
 
-
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+
+    load_gui("../images/checkerboard_10x10.png");
+    return 0;
+
     cv::RNG rng(1234567);
 
     // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
@@ -79,7 +81,7 @@ int main(int argc, char** argv)
         cv::Mat checker_img = cv::imread(checker_file, cv::IMREAD_COLOR);
 
         cv::Mat dist;
-        distortion(checker_img, dist, 0, checker_img.rows-1);
+        distortion(checker_img, dist);
 
         cv::Mat img, mask;
         generate_random_overlay(cv::Size(600, 800), rng, 50, img, mask);

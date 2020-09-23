@@ -236,46 +236,42 @@ void generate_random_overlay(cv::Size img_size,
 // http://marcodiiga.github.io/radial-lens-undistortion-filtering
 
 void distortion(cv::Mat src,
-    cv::Mat& dst,
-    int start,
-    int end)
+    cv::Mat& dst, 
+    int xc, 
+    int yc, 
+    float kx1, 
+    float kx2, 
+    float ky1, 
+    float ky2)
 {
     dst = cv::Mat(src.rows, src.cols, CV_8U, cv::Scalar::all(255));
 
     int nr = src.rows;
     int nc = src.cols;
 
-    // center of distortion
-    int xc = nr / 2;
-    int yc = nc / 2;
-
-    // distortion coefficients
-    float k1 = -0.0009;
-    float k2 = -0.00000008;
-
     float r;
     int xd, yd;
     float xn, yn, xd_f, yd_f;
 
-    for (int x = start; x < end; x++)
+    for (int x = 0; x < src.cols; x++)
     {
-        for (int y = 0; y < src.cols; y++)
+        for (int y = 0; y < src.rows; y++)
         {
-            xn = (float)(2 * x - nr) / nr;
-            yn = (float)(2 * y - nc) / nc;
+            xn = (float)(2 * x - nc) / nc;
+            yn = (float)(2 * y - nr) / nr;
 
             r = (x - xc) * (x - xc) + (y - yc) * (y - yc);
             r = sqrt(r);
 
-            xd_f = xn * (1 + k1 * r + k2 * r * r);
-            yd_f = yn * (1 + k1 * r + k2 * r * r);
+            xd_f = xn * (1 + kx1 * r + kx2 * r * r);
+            yd_f = yn * (1 + ky1 * r + ky2 * r * r);
 
-            xd = (xd_f + 1.0) * nr / 2;
-            yd = (yd_f + 1.0) * nc / 2;
+            xd = (xd_f + 1.0) * nc / 2;
+            yd = (yd_f + 1.0) * nr / 2;
 
-            if (xd < src.rows && xd >= 0 && yd < src.cols && yd >= 0)
+            if (xd < src.cols && xd >= 0 && yd < src.rows && yd >= 0)
             {
-                dst.at<uint8_t>(xd, yd) = src.at<uint8_t>(x, y);
+                dst.at<uint8_t>(yd, xd) = src.at<uint8_t>(y, x);
             }
 
         } // end of inner for loop
@@ -284,5 +280,109 @@ void distortion(cv::Mat src,
 } // end of distortion
 
 
+void distortion(cv::Mat src,
+    cv::Mat& dst)
+{
+    int nr = src.rows;
+    int nc = src.cols;
+
+    // center of distortion
+    int xc = nc / 2;
+    int yc = nr / 2;
+
+    // distortion coefficients
+    float k1 = 0.0008;
+    float k2 = 0.0;
+
+    distortion(src, dst, xc, yc, k1, k2, k1, k2);
+}
+
+
+cv::Mat img, dst;
+
+struct cv_distortion_coeffs
+{
+    int xc = 0;
+    int yc = 0;
+    int kx1 = 0;
+    int kx2 = 0;
+    int ky1 = 0;
+    int ky2 = 0;
+};
+
+
+void trackbar_callback(int, void* user_data)
+{
+    cv_distortion_coeffs params = *((cv_distortion_coeffs*)user_data);
+
+    float kx1 = (float)((params.kx1 + 1) / 100000.0);
+    float kx2 = (float)((params.kx2 + 1) / 1000000.0);
+    float ky1 = (float)((params.ky1 + 1) / 100000.0);
+    float ky2 = (float)((params.ky2 + 1) / 1000000.0);
+
+    std::cout << "center of distortion (" << params.xc << ", " << params.yc << ")" << std::endl;
+    std::cout << "distortion coefficients (kx1, ky1) (" << kx1 << ", " << ky1 << ")" <<
+        " -- (kx2, ky2) (" << kx2 << ", " << ky2 << ")" << std::endl << std::endl;
+
+    distortion(img, dst, (int)params.xc, (int)params.yc, kx1, kx2, ky1, ky2);
+    cv::imshow("Checkbard Image", dst);
+}
+
+void button_callback(int state, void* user_data) {
+    if (state)
+    {
+        cv_distortion_coeffs params = *((cv_distortion_coeffs*)user_data);
+
+        std::string file_name = "checkboard_img-" + std::to_string(params.xc) + "-" + std::to_string(params.yc) + ".jpg";
+        
+        cv::imwrite("../images/"+file_name, dst);
+    }
+}
+
+
+void load_gui(std::string file_path)
+{
+    img = cv::imread(file_path, cv::IMREAD_COLOR);
+    
+    int coefficient_max = 100;
+    int xc_max = img.cols;
+    int yc_max = img.rows;
+
+    cv_distortion_coeffs user_data;
+    user_data.xc = img.cols / 2;
+    user_data.yc = img.rows / 2;
+
+    std::string parameter_window = "Parameter Options";
+    cv::namedWindow(parameter_window, cv::WINDOW_AUTOSIZE); // Create Window
+
+    // xc and yc trackbar
+    char TrackbarName[50];
+    sprintf(TrackbarName, "Xc - %d", xc_max);
+    cv::createTrackbar(TrackbarName, parameter_window, &user_data.xc, xc_max, trackbar_callback, &user_data);
+    sprintf(TrackbarName, "Yc - %d", yc_max);
+    cv::createTrackbar(TrackbarName, parameter_window, &user_data.yc, yc_max, trackbar_callback, &user_data);
+
+    // kx1 and kx2 trackbar
+    sprintf(TrackbarName, "Kx1 - %d", coefficient_max);
+    cv::createTrackbar(TrackbarName, parameter_window, &user_data.kx1, coefficient_max, trackbar_callback, &user_data);
+    sprintf(TrackbarName, "Kx2 - %d", coefficient_max);
+    cv::createTrackbar(TrackbarName, parameter_window, &user_data.kx2, coefficient_max, trackbar_callback, &user_data);
+
+    // ky1 and ky2 trackbar
+    sprintf(TrackbarName, "Ky1 - %d", coefficient_max);
+    cv::createTrackbar(TrackbarName, parameter_window, &user_data.ky1, coefficient_max, trackbar_callback, &user_data);
+    sprintf(TrackbarName, "Ky2 - %d", coefficient_max);
+    cv::createTrackbar(TrackbarName, parameter_window, &user_data.ky2, coefficient_max, trackbar_callback, &user_data);
+
+    // create button to save images
+    //cv::createButton("Save image", button_callback, NULL);
+
+    cv::namedWindow("Checkbard Image", cv::WINDOW_AUTOSIZE); // Create Window
+    trackbar_callback(0, &user_data);
+    cv::waitKey(0);
+
+    // save new image
+    cv::imwrite("../images/checkerboard_pincushion.jpg", dst);
+}
 
 #endif // _CV_BLUR_PROCESS_H_

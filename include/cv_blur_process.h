@@ -1,7 +1,7 @@
 #ifndef _CV_BLUR_PROCESS_H_
 #define _CV_BLUR_PROCESS_H_
 
-
+#include <cstdint>
 
 // OpenCV includes
 #include <opencv2/core.hpp>

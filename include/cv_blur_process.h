@@ -257,8 +257,8 @@ void distortion(cv::Mat src,
     {
         for (int y = 0; y < src.rows; y++)
         {
-            xn = (float)(2 * x - nc) / nc;
-            yn = (float)(2 * y - nr) / nr;
+            xn = (float)(2 * x - nc) / (float)nc;
+            yn = (float)(2 * y - nr) / (float)nr;
 
             r = (x - xc) * (x - xc) + (y - yc) * (y - yc);
             r = sqrt(r);
@@ -266,12 +266,12 @@ void distortion(cv::Mat src,
             xd_f = xn * (1 + kx1 * r + kx2 * r * r);
             yd_f = yn * (1 + ky1 * r + ky2 * r * r);
 
-            xd = (xd_f + 1.0) * nc / 2;
-            yd = (yd_f + 1.0) * nr / 2;
+            xd = (uint64_t)((xd_f + 1.0) * nc / 2);
+            yd = (uint64_t)((yd_f + 1.0) * nr / 2);
 
             if (xd < src.cols && xd >= 0 && yd < src.rows && yd >= 0)
             {
-                dst.at<uint8_t>(yd, xd) = src.at<uint8_t>(y, x);
+                dst.at<uint8_t>(y, x) = src.at<uint8_t>(yd, xd);
             }
 
         } // end of inner for loop

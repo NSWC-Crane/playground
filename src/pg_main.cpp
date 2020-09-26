@@ -37,7 +37,8 @@
 // custom includes
 #include <cv_blur_process.h>
 #include <cv_random_image_gen.h>
-
+#include <cv_create_gaussian_kernel.h>
+#include <blur_params.h>
 
 void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mask) 
 {
@@ -59,6 +60,9 @@ void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mas
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+
+    uint32_t img_h = 500;
+    uint32_t img_w = 500;
 
     load_gui("../images/checkerboard_10x10.png");
     return 0;

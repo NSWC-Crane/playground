@@ -77,6 +77,16 @@ inline void blur_layer(cv::Mat& src,
 }   // end of blur_layer 
 
 
+
+//-----------------------------------------------------------------------------
+void genrate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, std::vector<uint16_t> &dm_values)
+{
+    
+    
+}
+
+
+//-----------------------------------------------------------------------------
 void generate_random_mask(cv::Mat& output_mask,
     cv::Size img_size,
     cv::RNG& rng,
@@ -184,6 +194,7 @@ void generate_random_mask(cv::Mat& output_mask,
 } // end of generate_random_mask
 
 
+//-----------------------------------------------------------------------------
 void generate_random_overlay(cv::Size img_size,
     cv::RNG& rng, 
     uint32_t num_shapes, 

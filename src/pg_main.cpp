@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <type_traits>
 #include <list>
+#include <set>
 
 // OpenCV includes
 #include <opencv2/core.hpp>
@@ -57,59 +58,63 @@ void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mas
     cv::add(prod1, prod2, dst);
 }
 
+
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-
     uint32_t img_h = 500;
     uint32_t img_w = 500;
 
-    load_gui("../images/checkerboard_10x10.png");
-    return 0;
-
     cv::RNG rng(1234567);
-
-    // this will have to be adjusted based on where/how you are running the code... It should work for VS debugging
-    std::string checker_file = "../images/checkerboard_10x10.png"; 
     
-    if (argc > 1) 
-    {
-        checker_file = argv[1];
-    }
-
-    std::cout << "Path to image " << checker_file << std::endl;
-
     // do work here
     try
     {
-        cv::Mat checker_img = cv::imread(checker_file, cv::IMREAD_COLOR);
+        // generate and sort dm_values
+        std::vector<uint16_t> dm_values;
+        genrate_depthmap_set(min_dm_value, max_dm_value, dm_values, rng);
 
-        cv::Mat dist;
-        distortion(checker_img, dist);
+        // generate random image
+        cv::Mat random_img;
+        generate_random_image(random_img, rng, img_h, img_w, 40, 1.0);
+        random_img.convertTo(random_img, CV_32FC3, (1/255.0));
 
-        cv::Mat img, mask;
-        generate_random_overlay(cv::Size(600, 800), rng, 50, img, mask);
+        // create gaussian kernel 
+        cv::Mat kernel;
+        double sigma = (double)sigma_table[br1_table[dm_values[0]]];
+        create_gaussian_kernel(kernel_size, sigma, kernel); // NaN issue
 
-        // convert data type to 32 bit float
-        checker_img.convertTo(checker_img, CV_32FC3, 1/255.0); // CV_32F values are from 0.0 to 1.0
+        // blur image - filter2D()
+        cv::filter2D(random_img, random_img, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-        for (int i = 0; i < 8; i++) 
+        // generate base depth map
+        cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
+
+        for (int idx = 1; idx < dm_values.size(); ++idx)
         {
-            blur_layer(checker_img, rng, rng.uniform(0, 60));
+            // generate N
+            int min_N = ceil((max_dm_value) / (1 + exp(-0.2 * dm_values[idx] + (0.1 * max_dm_value))) + 3);
+            int max_N = ceil(1.25 * min_N);
+            int N = rng.uniform(min_N, max_N + 1);
+
+            // generate random overlay
+            cv::Mat img_mask, mask;
+            generate_random_overlay(random_img, rng, N, img_mask, mask); // should it add more shapes or just overlay a random gen. mask? My guess is the latter
+
+            // overlay depthmap
+            overlay_depthmap(depth_map, mask, dm_values[idx]);
+
+            // generate kernel
+            create_gaussian_kernel(kernel_size, sigma_table[dm_values[idx]], kernel);
+
+            // blur layer
+            blur_layer(random_img, img_mask, mask, kernel, rng, 3);
         }
-        
 
-        std::string cv_window = "Final Image";
-        cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-        cv::imshow(cv_window, dist);
-        cv::waitKey(0);
-
-        // convert dst image to CV_8UC3
-        cv::Mat dst_save;
-        checker_img.convertTo(dst_save, CV_8UC3, 255); // use alpha parameter to scale 
-
-        // save new image
-        cv::imwrite("../images/checkerboard_blurred.jpg", dst_save);
+        // save blurred image (png)
+        cv::imwrite("../images/blurred_img.png", random_img);
+        // save depthmap image (png)
+        cv::imwrite("../images/depth_map.png", depth_map);
     }
     catch(std::exception& e)
     {

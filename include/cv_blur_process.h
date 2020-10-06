@@ -10,8 +10,9 @@
 #include <opencv2/calib3d.hpp>
 
 #include <cv_random_image_gen.h>
+#include <blur_params.h>
 
-#include <math.h>
+#include <set>
 
 /*
 This function will take a base image and overlay a set of shapes and then blur them according to the sigma value
@@ -77,12 +78,48 @@ inline void blur_layer(cv::Mat& src,
 }   // end of blur_layer 
 
 
+inline void blur_layer(cv::Mat& random_img,
+    cv::Mat random_overlay,
+    cv::Mat mask,
+    cv::Mat kernel,
+    cv::RNG& rng,
+    double sigma,
+    double scale = 0.3)
+{
+    // clone the source image
+    cv::Mat src_clone = random_img.clone();
+
+    // blur the src_clone image with the overlay and blur the mask image using the sigma value to determine the blur kernel size
+    cv::filter2D(src_clone, src_clone, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+    cv::filter2D(mask, mask, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+
+    // multiply the src image times (cv::Scalar(1.0, 1.0, 1.0) - BM_1)
+    cv::Mat L1_1;
+    cv::multiply(random_img, cv::Scalar(1.0, 1.0, 1.0) - mask, L1_1);
+
+    // multiply the src_clone image times BM_1
+    cv::Mat L1_2;
+    cv::multiply(src_clone, mask, L1_2);
+
+    // set src equal to L1_1 + L1_2
+    cv::add(L1_1, L1_2, random_img);
+
+}   // end of blur_layer 
+
+
 
 //-----------------------------------------------------------------------------
-void genrate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, std::vector<uint16_t> &dm_values)
+void genrate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, std::vector<uint16_t> &dm_values, cv::RNG rng)
 {
-    
-    
+    std::set<uint16_t, std::greater<uint16_t>> values;
+
+    for (int i = 0; i < max_dm_num; i++)
+    {
+        uint16_t idx = rng.uniform(min_dm_value, max_dm_value+1);
+        values.insert(idx);
+    }
+
+    dm_values = std::vector<uint16_t>(values.begin(), values.end());
 }
 
 
@@ -222,178 +259,44 @@ void generate_random_overlay(cv::Size img_size,
 } // end of generate_random_overlay
 
 
-//void distortion(cv::Mat src,
-//    cv::Mat& dst)
-//{
-//    dst = cv::Mat(src.rows, src.cols, CV_8U, cv::Scalar::all(255));
-//
-//    cv::Mat cameraMatrix = cv::Mat::eye(cv::Size(3, 3), CV_32F);
-//    cameraMatrix.at<float>(0, 0) = 40.0;
-//    cameraMatrix.at<float>(1, 1) = 40.0;
-//    cameraMatrix.at<float>(0, 2) = src.rows / 2.f;
-//    cameraMatrix.at<float>(1, 2) = src.cols / 2.f;
-//    
-//    cv::Mat distortion_coef(1, 4, CV_32F);
-//    distortion_coef.at<float>(0) = -0.001;
-//    distortion_coef.at<float>(1) = 0;
-//    distortion_coef.at<float>(2) = 0;
-//    distortion_coef.at<float>(3) = 0;
-//
-//    cv::fisheye::distortPoints(src, dst, cameraMatrix, distortion_coef);
-//}
-
-
-// https://www.mathworks.com/help/vision/ug/camera-calibration.html
-// http://marcodiiga.github.io/radial-lens-undistortion-filtering
-
-void distortion(cv::Mat src,
-    cv::Mat& dst, 
-    int xc, 
-    int yc, 
-    float kx1, 
-    float kx2, 
-    float ky1, 
-    float ky2)
+//-----------------------------------------------------------------------------
+void generate_random_overlay(cv::Mat random_img,
+    cv::RNG& rng,
+    uint32_t num_shapes,
+    cv::Mat& output_img,
+    cv::Mat& output_mask)
 {
-    dst = cv::Mat(src.rows, src.cols, CV_8U, cv::Scalar::all(255));
+    cv::Size img_size(random_img.rows, random_img.cols);
 
-    int nr = src.rows;
-    int nc = src.cols;
+    // generate random mask
+    generate_random_mask(output_mask, img_size, rng, num_shapes);
 
-    float r;
-    int xd, yd;
-    float xn, yn, xd_f, yd_f;
+    // multiply random_img times output_mask
+    cv::multiply(random_img, output_mask, output_img);
 
-    for (int x = 0; x < src.cols; x++)
-    {
-        for (int y = 0; y < src.rows; y++)
-        {
-            xn = (float)(2 * x - nc) / (float)nc;
-            yn = (float)(2 * y - nr) / (float)nr;
-
-            r = (x - xc) * (x - xc) + (y - yc) * (y - yc);
-            r = sqrt(r);
-
-            xd_f = xn * (1 + kx1 * r + kx2 * r * r);
-            yd_f = yn * (1 + ky1 * r + ky2 * r * r);
-
-            xd = (uint64_t)((xd_f + 1.0) * nc / 2);
-            yd = (uint64_t)((yd_f + 1.0) * nr / 2);
-
-            if (xd < src.cols && xd >= 0 && yd < src.rows && yd >= 0)
-            {
-                dst.at<uint8_t>(y, x) = src.at<uint8_t>(yd, xd);
-            }
-
-        } // end of inner for loop
-    } // end of for loop
-
-} // end of distortion
+} // end of generate_random_overlay
 
 
-void distortion(cv::Mat src,
-    cv::Mat& dst)
+//-----------------------------------------------------------------------------
+void overlay_depthmap(cv::Mat& depth_map, cv::Mat mask, uint16_t dm_value)
 {
-    int nr = src.rows;
-    int nc = src.cols;
-
-    // center of distortion
-    int xc = nc / 2;
-    int yc = nr / 2;
-
-    // distortion coefficients
-    float k1 = 0.0008;
-    float k2 = 0.0;
-
-    distortion(src, dst, xc, yc, k1, k2, k1, k2);
-}
-
-
-cv::Mat img, dst;
-
-struct cv_distortion_coeffs
-{
-    int xc = 0;
-    int yc = 0;
-    int kx1 = 0;
-    int kx2 = 0;
-    int ky1 = 0;
-    int ky2 = 0;
-};
-
-
-void trackbar_callback(int, void* user_data)
-{
-    cv_distortion_coeffs params = *((cv_distortion_coeffs*)user_data);
-
-    float kx1 = (float)((params.kx1 + 1) / 100000.0);
-    float kx2 = (float)((params.kx2 + 1) / 1000000.0);
-    float ky1 = (float)((params.ky1 + 1) / 100000.0);
-    float ky2 = (float)((params.ky2 + 1) / 1000000.0);
-
-    std::cout << "center of distortion (" << params.xc << ", " << params.yc << ")" << std::endl;
-    std::cout << "distortion coefficients (kx1, ky1) (" << kx1 << ", " << ky1 << ")" <<
-        " -- (kx2, ky2) (" << kx2 << ", " << ky2 << ")" << std::endl << std::endl;
-
-    distortion(img, dst, (int)params.xc, (int)params.yc, kx1, kx2, ky1, ky2);
-    cv::imshow("Checkbard Image", dst);
-}
-
-void button_callback(int state, void* user_data) {
-    if (state)
-    {
-        cv_distortion_coeffs params = *((cv_distortion_coeffs*)user_data);
-
-        std::string file_name = "checkboard_img-" + std::to_string(params.xc) + "-" + std::to_string(params.yc) + ".jpg";
-        
-        cv::imwrite("../images/"+file_name, dst);
-    }
-}
-
-
-void load_gui(std::string file_path)
-{
-    img = cv::imread(file_path, cv::IMREAD_COLOR);
+    cv::Mat fg_mask;
     
-    int coefficient_max = 100;
-    int xc_max = img.cols;
-    int yc_max = img.rows;
+    mask.convertTo(mask, CV_8U); 
+    cv::cvtColor(mask, mask, cv::COLOR_BGR2GRAY); 
 
-    cv_distortion_coeffs user_data;
-    user_data.xc = img.cols / 2;
-    user_data.yc = img.rows / 2;
+    // set fg_mask = 1 - mask
+    cv::subtract(cv::Scalar(1), mask, fg_mask);
 
-    std::string parameter_window = "Parameter Options";
-    cv::namedWindow(parameter_window, cv::WINDOW_AUTOSIZE); // Create Window
+    cv::multiply(depth_map, fg_mask, depth_map);
 
-    // xc and yc trackbar
-    char TrackbarName[50];
-    sprintf(TrackbarName, "Xc - %d", xc_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.xc, xc_max, trackbar_callback, &user_data);
-    sprintf(TrackbarName, "Yc - %d", yc_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.yc, yc_max, trackbar_callback, &user_data);
+    // multiply mask with dm_value  
+    cv::multiply(mask, cv::Scalar(dm_value), mask);
 
-    // kx1 and kx2 trackbar
-    sprintf(TrackbarName, "Kx1 - %d", coefficient_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.kx1, coefficient_max, trackbar_callback, &user_data);
-    sprintf(TrackbarName, "Kx2 - %d", coefficient_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.kx2, coefficient_max, trackbar_callback, &user_data);
+    // overlay depthmap
+    cv::add(depth_map, mask, depth_map);
 
-    // ky1 and ky2 trackbar
-    sprintf(TrackbarName, "Ky1 - %d", coefficient_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.ky1, coefficient_max, trackbar_callback, &user_data);
-    sprintf(TrackbarName, "Ky2 - %d", coefficient_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.ky2, coefficient_max, trackbar_callback, &user_data);
-
-    // create button to save images
-    //cv::createButton("Save image", button_callback, NULL);
-
-    cv::namedWindow("Checkbard Image", cv::WINDOW_AUTOSIZE); // Create Window
-    trackbar_callback(0, &user_data);
-    cv::waitKey(0);
-
-    // save new image
-    cv::imwrite("../images/checkerboard_pincushion.jpg", dst);
 }
+
 
 #endif // _CV_BLUR_PROCESS_H_

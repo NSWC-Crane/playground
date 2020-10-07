@@ -106,7 +106,7 @@ void trackbar_callback(int, void* user_data)
         " -- (kx2, ky2) (" << kx2 << ", " << ky2 << ")" << std::endl << std::endl;
 
     distortion(img, dst, (int)params.xc, (int)params.yc, kx1, kx2, ky1, ky2);
-    cv::imshow("Checkbard Image", dst);
+    cv::imshow("Distorted Image", dst);
 }
 
 
@@ -126,26 +126,26 @@ void load_gui(std::string file_path)
     cv::namedWindow(parameter_window, cv::WINDOW_AUTOSIZE); // Create Window
 
     // xc and yc trackbar
-    char TrackbarName[50];
-    sprintf(TrackbarName, "Xc - %d", xc_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.xc, xc_max, trackbar_callback, &user_data);
-    sprintf(TrackbarName, "Yc - %d", yc_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.yc, yc_max, trackbar_callback, &user_data);
+    std::string trackbar_name = "Xc - " + std::to_string(xc_max);
+    cv::createTrackbar(trackbar_name, parameter_window, &user_data.xc, xc_max, trackbar_callback, &user_data);
+    trackbar_name = "Yc - " + std::to_string(yc_max);
+    cv::createTrackbar(trackbar_name, parameter_window, &user_data.yc, yc_max, trackbar_callback, &user_data);
 
     // kx1 and kx2 trackbar
-    sprintf(TrackbarName, "Kx1 - %d", coefficient_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.kx1, coefficient_max, trackbar_callback, &user_data);
-    sprintf(TrackbarName, "Kx2 - %d", coefficient_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.kx2, coefficient_max, trackbar_callback, &user_data);
+    trackbar_name = "Kx1 - " + std::to_string(coefficient_max);
+    cv::createTrackbar(trackbar_name, parameter_window, &user_data.kx1, coefficient_max, trackbar_callback, &user_data);
+    trackbar_name = "Kx2 - " + std::to_string(coefficient_max);
+    cv::createTrackbar(trackbar_name, parameter_window, &user_data.kx2, coefficient_max, trackbar_callback, &user_data);
 
     // ky1 and ky2 trackbar
-    sprintf(TrackbarName, "Ky1 - %d", coefficient_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.ky1, coefficient_max, trackbar_callback, &user_data);
-    sprintf(TrackbarName, "Ky2 - %d", coefficient_max);
-    cv::createTrackbar(TrackbarName, parameter_window, &user_data.ky2, coefficient_max, trackbar_callback, &user_data);
+    trackbar_name = "Ky1 - " + std::to_string(coefficient_max);
+    cv::createTrackbar(trackbar_name, parameter_window, &user_data.ky1, coefficient_max, trackbar_callback, &user_data);
+    trackbar_name = "Ky2 - " + std::to_string(coefficient_max);
+    cv::createTrackbar(trackbar_name, parameter_window, &user_data.ky2, coefficient_max, trackbar_callback, &user_data);
 
-    cv::namedWindow("Checkbard Image", cv::WINDOW_AUTOSIZE); // Create Window
-    trackbar_callback(0, &user_data); // initialize windom
+    std::string main_window = "Distorted Image";
+    cv::namedWindow(main_window, cv::WINDOW_AUTOSIZE); // Create Window
+    trackbar_callback(0, &user_data); // initialize window
     cv::waitKey(0);
 
     // save new image

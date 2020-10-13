@@ -64,6 +64,7 @@ int main(int argc, char** argv)
 {
     uint32_t img_h = 500;
     uint32_t img_w = 500;
+    cv::Size img_size(img_h, img_w);
 
     cv::RNG rng(1234567);
     
@@ -81,8 +82,7 @@ int main(int argc, char** argv)
 
         // create gaussian kernel 
         cv::Mat kernel;
-        double sigma = (double)sigma_table[br1_table[dm_values[0]]];
-        create_gaussian_kernel(kernel_size, sigma, kernel); // NaN issue
+        create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[0]]], kernel);
 
         // blur image - filter2D()
         cv::filter2D(random_img, random_img, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
@@ -98,23 +98,24 @@ int main(int argc, char** argv)
             int N = rng.uniform(min_N, max_N + 1);
 
             // generate random overlay
-            cv::Mat img_mask, mask;
-            generate_random_overlay(random_img, rng, N, img_mask, mask); // should it add more shapes or just overlay a random gen. mask? My guess is the latter
+            cv::Mat output_img, mask;
+            generate_random_overlay(img_size, rng, N, output_img, mask);
 
             // overlay depthmap
             overlay_depthmap(depth_map, mask, dm_values[idx]);
 
             // generate kernel
-            create_gaussian_kernel(kernel_size, sigma_table[dm_values[idx]], kernel);
+            create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[idx]]], kernel);
 
             // blur layer
-            blur_layer(random_img, img_mask, mask, kernel, rng, 3);
+            blur_layer(random_img, output_img, mask, kernel, rng, 3);
         }
 
-        // save blurred image (png)
+        // save blurred image 
+        random_img.convertTo(random_img, CV_8UC3, 255);
         cv::imwrite("../images/blurred_img.png", random_img);
-        // save depthmap image (png)
-        cv::imwrite("../images/depth_map.png", depth_map);
+        // save depthmap image
+        cv::imwrite("../images/depthmap_grayscale.png", depth_map);
     }
     catch(std::exception& e)
     {

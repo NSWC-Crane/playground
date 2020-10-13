@@ -89,23 +89,21 @@ inline void blur_layer(cv::Mat& random_img,
     // clone the source image
     cv::Mat src_clone = random_img.clone();
 
-    // blur the src_clone image with the overlay and blur the mask image using the sigma value to determine the blur kernel size
+    // blur the src_clone image with the overlay and blur the mask image
     cv::filter2D(src_clone, src_clone, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
     cv::filter2D(mask, mask, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-    // multiply the src image times (cv::Scalar(1.0, 1.0, 1.0) - BM_1)
+    // multiply the src image times (cv::Scalar(1.0, 1.0, 1.0) - mask)
     cv::Mat L1_1;
     cv::multiply(random_img, cv::Scalar(1.0, 1.0, 1.0) - mask, L1_1);
 
-    // multiply the src_clone image times BM_1
-    cv::Mat L1_2;
-    cv::multiply(src_clone, mask, L1_2);
+    // blur random_overlay
+    cv::filter2D(random_overlay, random_overlay, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-    // set src equal to L1_1 + L1_2
-    cv::add(L1_1, L1_2, random_img);
+    // set src equal to L1_1 + random_overlay
+    cv::add(L1_1, random_overlay, random_img);
 
 }   // end of blur_layer 
-
 
 
 //-----------------------------------------------------------------------------
@@ -238,7 +236,6 @@ void generate_random_overlay(cv::Size img_size,
     cv::Mat& output_img, 
     cv::Mat& output_mask)
 {
-
     // define the number of shapes for generate_radnom_image
     uint32_t N = img_size.height * img_size.width * 0.004;
     
@@ -260,35 +257,17 @@ void generate_random_overlay(cv::Size img_size,
 
 
 //-----------------------------------------------------------------------------
-void generate_random_overlay(cv::Mat random_img,
-    cv::RNG& rng,
-    uint32_t num_shapes,
-    cv::Mat& output_img,
-    cv::Mat& output_mask)
-{
-    cv::Size img_size(random_img.rows, random_img.cols);
-
-    // generate random mask
-    generate_random_mask(output_mask, img_size, rng, num_shapes);
-
-    // multiply random_img times output_mask
-    cv::multiply(random_img, output_mask, output_img);
-
-} // end of generate_random_overlay
-
-
-//-----------------------------------------------------------------------------
 void overlay_depthmap(cv::Mat& depth_map, cv::Mat mask, uint16_t dm_value)
 {
-    cv::Mat fg_mask;
+    cv::Mat bg_mask;
     
     mask.convertTo(mask, CV_8U); 
     cv::cvtColor(mask, mask, cv::COLOR_BGR2GRAY); 
 
-    // set fg_mask = 1 - mask
-    cv::subtract(cv::Scalar(1), mask, fg_mask);
+    // set bg_mask = 1 - mask
+    cv::subtract(cv::Scalar(1), mask, bg_mask);
 
-    cv::multiply(depth_map, fg_mask, depth_map);
+    cv::multiply(depth_map, bg_mask, depth_map);
 
     // multiply mask with dm_value  
     cv::multiply(mask, cv::Scalar(dm_value), mask);

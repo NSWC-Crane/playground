@@ -75,17 +75,18 @@ int main(int argc, char** argv)
         std::vector<uint16_t> dm_values;
         genrate_depthmap_set(min_dm_value, max_dm_value, dm_values, rng);
 
-        // generate random image
-        cv::Mat random_img;
-        generate_random_image(random_img, rng, img_h, img_w, 40, 1.0);
-        random_img.convertTo(random_img, CV_32FC3, (1/255.0));
+        // generate random images
+        cv::Mat blur_img1, blur_img2;
+        generate_random_image(blur_img1, rng, img_h, img_w, 40, 1.0);
+        blur_img1.convertTo(blur_img1, CV_32FC3, (1/255.0));
+        blur_img2 = blur_img1.clone();
 
-        // create gaussian kernel 
+        // create gaussian kernel and blur scences
         cv::Mat kernel;
         create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[0]]], kernel);
-
-        // blur image - filter2D()
-        cv::filter2D(random_img, random_img, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+        cv::filter2D(blur_img1, blur_img1, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+        create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[0]]], kernel);
+        cv::filter2D(blur_img2, blur_img2, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
         // generate base depth map
         cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
@@ -104,16 +105,19 @@ int main(int argc, char** argv)
             // overlay depthmap
             overlay_depthmap(depth_map, mask, dm_values[idx]);
 
-            // generate kernel
+            // generate kernel and blur scenes
             create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[idx]]], kernel);
-
-            // blur layer
-            blur_layer(random_img, output_img, mask, kernel, rng, 3);
+            blur_layer(blur_img1, output_img, mask, kernel, rng, 3);
+            create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[idx]]], kernel);
+            blur_layer(blur_img2, output_img, mask, kernel, rng, 3);
         }
 
-        // save blurred image 
-        random_img.convertTo(random_img, CV_8UC3, 255);
-        cv::imwrite("../images/blurred_img.png", random_img);
+        blur_img1.convertTo(blur_img1, CV_8UC3, 255);
+        blur_img2.convertTo(blur_img2, CV_8UC3, 255);
+        
+        // save blurred images
+        cv::imwrite("../images/blur_img1.png", blur_img1);
+        cv::imwrite("../images/blur_img2.png", blur_img2);
         // save depthmap image
         cv::imwrite("../images/depthmap_grayscale.png", depth_map);
     }

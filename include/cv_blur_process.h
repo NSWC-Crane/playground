@@ -278,4 +278,40 @@ void overlay_depthmap(cv::Mat& depth_map, cv::Mat mask, uint16_t dm_value)
 }
 
 
+void new_shapes(cv::Mat& test, uint32_t img_h, uint32_t img_w, cv::RNG rng)
+{
+    // NEW 
+    test = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));
+
+    double scale = 0.5;
+    int num_shapes = 15;
+    int h, w, s, sum_of_angles;
+    double a, theta;
+    int vlength, xcenter, ycenter;
+
+    for (int N = 0; N < num_shapes; N++)
+    {
+        h = std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
+        w = std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
+        s = rng.uniform(3, 7);
+        sum_of_angles = (s - 2) * 180.0;
+        a = sum_of_angles / (double)s;
+        int vlength = rng.uniform(0, h);
+
+        xcenter = rng.uniform(0, img_h);
+        ycenter = rng.uniform(0, img_w);
+        std::vector<cv::Point> pts;
+        theta = rng.uniform(0, 360);
+
+        for (int i = 0; i < s; i++)
+        {
+            pts.push_back(cv::Point(vlength * std::cos(i * a + theta) + xcenter, vlength * std::sin(i * a + theta) + ycenter));
+        }
+
+        //std::sort(pts.begin(), pts.end(), less_than_key());
+        cv::fillPoly(test, pts, cv::Scalar(255), cv::LineTypes::LINE_8);
+    }
+    // END OF NEW
+}
+
 #endif // _CV_BLUR_PROCESS_H_

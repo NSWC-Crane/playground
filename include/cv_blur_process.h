@@ -284,31 +284,38 @@ void new_shapes(cv::Mat& test, uint32_t img_h, uint32_t img_w, cv::RNG rng)
     test = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));
 
     double scale = 0.5;
-    int num_shapes = 15;
+    int num_shapes = 1;
     int h, w, s, sum_of_angles;
     double a, theta;
-    int vlength, xcenter, ycenter;
+    int radius, xcenter, ycenter;
+    int angle;
+
+    int h_, w_;
 
     for (int N = 0; N < num_shapes; N++)
     {
         h = std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
         w = std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
-        s = rng.uniform(3, 7);
+        
+        theta = 0; // rng.uniform(0, 360);
+        s = rng.uniform(3, 5);
         sum_of_angles = (s - 2) * 180.0;
         a = sum_of_angles / (double)s;
-        int vlength = rng.uniform(0, h);
-
-        xcenter = rng.uniform(0, img_h);
-        ycenter = rng.uniform(0, img_w);
+        
+        xcenter = 250; // rng.uniform(0, img_h);
+        ycenter = 250; // rng.uniform(0, img_w);
         std::vector<cv::Point> pts;
-        theta = rng.uniform(0, 360);
 
-        for (int i = 0; i < s; i++)
+        for (int i = 1; i <= s; i++)
         {
-            pts.push_back(cv::Point(vlength * std::cos(i * a + theta) + xcenter, vlength * std::sin(i * a + theta) + ycenter));
+            h_ = rng.uniform(h/4, h + 1);
+            w_ = rng.uniform(h/4, w + 1);
+            radius = std::sqrt(h_ * h_ + w_ * w_);
+
+            angle = rng.uniform((i-1)*a, i*a);
+            pts.push_back(cv::Point(radius * std::cos(angle + theta) + xcenter, radius * std::sin(angle + theta) + ycenter));
         }
 
-        //std::sort(pts.begin(), pts.end(), less_than_key());
         cv::fillPoly(test, pts, cv::Scalar(255), cv::LineTypes::LINE_8);
     }
     // END OF NEW

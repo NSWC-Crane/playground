@@ -70,8 +70,7 @@ int main(int argc, char** argv)
     // do work here
     try
     {
-        // testing function
-        cv::Mat test;
+        cv::Mat test(img_h, img_w, CV_8U, cv::Scalar::all(0));
         new_shapes(test, img_h, img_w, rng);
 
         // generate and sort dm_values

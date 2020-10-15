@@ -58,7 +58,6 @@ void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mas
     cv::add(prod1, prod2, dst);
 }
 
-
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
@@ -71,6 +70,10 @@ int main(int argc, char** argv)
     // do work here
     try
     {
+        // testing function
+        cv::Mat test;
+        new_shapes(test, img_h, img_w, rng);
+
         // generate and sort dm_values
         std::vector<uint16_t> dm_values;
         genrate_depthmap_set(min_dm_value, max_dm_value, dm_values, rng);

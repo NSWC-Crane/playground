@@ -282,12 +282,13 @@ void new_shapes(cv::Mat& test, uint32_t img_h, uint32_t img_w, cv::RNG rng)
 {
     // NEW 
     test = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));
-
-    double scale = 0.5;
-    int num_shapes = 1;
-    int h, w, s, sum_of_angles;
-    double a, theta;
-    int radius, xcenter, ycenter;
+    std::vector<cv::Point> pts;
+    std::vector<std::vector<cv::Point> > vpts(1);
+    double scale = 0.2;
+    int num_shapes = 10;
+    int h, w, s;
+    double a;
+    int radius;
     int angle;
 
     int h_, w_;
@@ -297,26 +298,27 @@ void new_shapes(cv::Mat& test, uint32_t img_h, uint32_t img_w, cv::RNG rng)
         h = std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
         w = std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
         
-        theta = 0; // rng.uniform(0, 360);
-        s = rng.uniform(3, 5);
-        sum_of_angles = (s - 2) * 180.0;
-        a = sum_of_angles / (double)s;
+        s = rng.uniform(3, 9);
+        a = 360 / (double)s;
         
-        xcenter = 250; // rng.uniform(0, img_h);
-        ycenter = 250; // rng.uniform(0, img_w);
-        std::vector<cv::Point> pts;
+        cv::Point center(rng.uniform(0, img_h), rng.uniform(0, img_w));
 
+        pts.clear();
         for (int i = 1; i <= s; i++)
         {
             h_ = rng.uniform(h/4, h + 1);
             w_ = rng.uniform(h/4, w + 1);
             radius = std::sqrt(h_ * h_ + w_ * w_);
 
-            angle = rng.uniform((i-1)*a, i*a);
-            pts.push_back(cv::Point(radius * std::cos(angle + theta) + xcenter, radius * std::sin(angle + theta) + ycenter));
+            angle = rng.uniform((i - 1) * a, i * a);
+            pts.push_back(cv::Point(radius * std::cos((CV_PI / 180) * angle), radius * std::sin((CV_PI / 180) * angle)));
         }
 
-        cv::fillPoly(test, pts, cv::Scalar(255), cv::LineTypes::LINE_8);
+        vpts[0] = pts;
+        cv::fillPoly(test, vpts, cv::Scalar(255), cv::LineTypes::LINE_8, 0, center);
+        
+        // display bounded box 
+        cv::rectangle(test, cv::Point(center.x + w, center.y + h), cv::Point(center.x - w, center.y - h), cv::Scalar(255));
     }
     // END OF NEW
 }

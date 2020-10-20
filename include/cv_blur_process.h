@@ -291,8 +291,6 @@ void new_shapes(cv::Mat& test, uint32_t img_h, uint32_t img_w, cv::RNG rng)
     int radius;
     int angle;
 
-    int h_, w_;
-
     for (int N = 0; N < num_shapes; N++)
     {
         h = std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
@@ -304,19 +302,19 @@ void new_shapes(cv::Mat& test, uint32_t img_h, uint32_t img_w, cv::RNG rng)
         cv::Point center(rng.uniform(0, img_h), rng.uniform(0, img_w));
 
         pts.clear();
-        for (int i = 1; i <= s; i++)
+        for (int i = 0; i < s; i++)
         {
-            h_ = rng.uniform(h/4, h + 1);
-            w_ = rng.uniform(h/4, w + 1);
-            radius = std::sqrt(h_ * h_ + w_ * w_);
-
-            angle = rng.uniform((i - 1) * a, i * a);
+            // randomly choose angle 
+            angle = rng.uniform(i * a, (i + 1) * a);
+            // find maximum radius 
+            double angle_mod = angle % 90;
+            radius = w * std::cos((CV_PI / 180) * angle_mod);
+            // convert polar coordinates
             pts.push_back(cv::Point(radius * std::cos((CV_PI / 180) * angle), radius * std::sin((CV_PI / 180) * angle)));
         }
 
         vpts[0] = pts;
         cv::fillPoly(test, vpts, cv::Scalar(255), cv::LineTypes::LINE_8, 0, center);
-        
         // display bounded box 
         cv::rectangle(test, cv::Point(center.x + w, center.y + h), cv::Point(center.x - w, center.y - h), cv::Scalar(255));
     }

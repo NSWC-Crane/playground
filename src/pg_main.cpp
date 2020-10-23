@@ -40,6 +40,7 @@
 #include <cv_random_image_gen.h>
 #include <cv_create_gaussian_kernel.h>
 #include <blur_params.h>
+#include <num2string.h>
 
 void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mask) 
 {
@@ -66,62 +67,80 @@ int main(int argc, char** argv)
     cv::Size img_size(img_h, img_w);
 
     cv::RNG rng(1234567);
-    
+
+    int num_of_imgs = 2;
+
     // do work here
     try
     {
         cv::Mat test(img_h, img_w, CV_8U, cv::Scalar::all(0));
         new_shapes(test, img_h, img_w, rng);
 
-        // generate and sort dm_values
-        std::vector<uint16_t> dm_values;
-        genrate_depthmap_set(min_dm_value, max_dm_value, dm_values, rng);
+        // create log file (relative to the build folder)
+        std::ofstream ofs("../log_file_javi.txt", std::ofstream::out);
 
-        // generate random images
-        cv::Mat blur_img1, blur_img2;
-        generate_random_image(blur_img1, rng, img_h, img_w, 40, 1.0);
-        blur_img1.convertTo(blur_img1, CV_32FC3, (1/255.0));
-        blur_img2 = blur_img1.clone();
-
-        // create gaussian kernel and blur scences
-        cv::Mat kernel;
-        create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[0]]], kernel);
-        cv::filter2D(blur_img1, blur_img1, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
-        create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[0]]], kernel);
-        cv::filter2D(blur_img2, blur_img2, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
-
-        // generate base depth map
-        cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
-
-        for (int idx = 1; idx < dm_values.size(); ++idx)
+        for (int i = 0; i < num_of_imgs; i++)
         {
-            // generate N
-            int min_N = ceil((max_dm_value) / (1 + exp(-0.2 * dm_values[idx] + (0.1 * max_dm_value))) + 3);
-            int max_N = ceil(1.25 * min_N);
-            int N = rng.uniform(min_N, max_N + 1);
+            // generate dm_values
+            std::vector<uint16_t> dm_values;
+            genrate_depthmap_set(min_dm_value, max_dm_value, dm_values, rng);
 
-            // generate random overlay
-            cv::Mat output_img, mask;
-            generate_random_overlay(img_size, rng, N, output_img, mask);
+            // create f1 & f2 images
+            cv::Mat img_f1, img_f2;
+            generate_random_image(img_f1, rng, img_h, img_w, 40, 1.0);
+            img_f1.convertTo(img_f1, CV_32FC3, (1 / 255.0));
+            img_f2 = img_f1.clone();
 
-            // overlay depthmap
-            overlay_depthmap(depth_map, mask, dm_values[idx]);
+            // create gaussian kernel and blur imgs
+            cv::Mat kernel;
+            create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[0]]], kernel);
+            cv::filter2D(img_f1, img_f1, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+            create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[0]]], kernel);
+            cv::filter2D(img_f2, img_f2, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-            // generate kernel and blur scenes
-            create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[idx]]], kernel);
-            blur_layer(blur_img1, output_img, mask, kernel, rng, 3);
-            create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[idx]]], kernel);
-            blur_layer(blur_img2, output_img, mask, kernel, rng, 3);
-        }
+            // create depth map
+            cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
 
-        blur_img1.convertTo(blur_img1, CV_8UC3, 255);
-        blur_img2.convertTo(blur_img2, CV_8UC3, 255);
-        
-        // save blurred images
-        cv::imwrite("../images/blur_img1.png", blur_img1);
-        cv::imwrite("../images/blur_img2.png", blur_img2);
-        // save depthmap image
-        cv::imwrite("../images/depthmap_grayscale.png", depth_map);
+            // blur imgs using dm_values
+            for (int idx = 1; idx < dm_values.size(); ++idx)
+            {
+                int min_N = ceil((max_dm_value) / (1 + exp(-0.2 * dm_values[idx] + (0.1 * max_dm_value))) + 3);
+                int max_N = ceil(1.25 * min_N);
+                int N = rng.uniform(min_N, max_N + 1);
+
+                // generate random overlay
+                cv::Mat output_img, mask;
+                generate_random_overlay(img_size, rng, N, output_img, mask);
+
+                // overlay depthmap
+                overlay_depthmap(depth_map, mask, dm_values[idx]);
+
+                // generate kernel and blur scenes
+                create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[idx]]], kernel);
+                blur_layer(img_f1, output_img, mask, kernel, rng, 3);
+                create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[idx]]], kernel);
+                blur_layer(img_f2, output_img, mask, kernel, rng, 3);
+            }
+
+            img_f1.convertTo(img_f1, CV_8UC3, 255);
+            img_f2.convertTo(img_f2, CV_8UC3, 255);
+
+            // this is generic programming in c++!?? read more into this
+            std::string f1_filename = num2str<int>(i, "images/image_f1_%i.png");
+            std::string f2_filename = num2str<int>(i, "images/image_f2_%i.png");
+            std::string dmap_filename = num2str<int>(i, "depth_maps/dm_%i.png");
+
+            // save images
+            cv::imwrite("../" + f1_filename, img_f1);
+            cv::imwrite("../" + f2_filename, img_f2);
+            cv::imwrite("../" + dmap_filename, depth_map);
+
+            // log files
+            ofs << f1_filename << ", " << f2_filename << ", " << dmap_filename << "\n";
+        } // for loop
+
+        // need to close file handler or data in buffer will be lost 
+        ofs.close();
     }
     catch(std::exception& e)
     {

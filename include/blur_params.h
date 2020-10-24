@@ -17,7 +17,7 @@ const std::vector<uint8_t> br2_table = {26,25,24,23,22,21,21,20,19,18,17,16,16,1
 // gaussian kernel size
 const uint32_t kernel_size = 69;
 
-// maximum number of depthmap values within a single image set
+// maximum number of depthmap values within a single image
 const uint32_t max_dm_num = 10;
 
 // starting number of objects in the farthest layer
@@ -26,6 +26,22 @@ const uint32_t num_objects = 40;
 // the range of depthmap values
 uint16_t min_dm_value = 0;
 uint16_t max_dm_value = br1_table.size()-1;
+
+
+void read_blur_params(std::vector<uint8_t> &depthmap_values, 
+    std::vector<double> &sigma_table, 
+    std::vector<uint8_t> &br1_table, 
+    std::vector<uint8_t> &br2_table,
+    uint8_t &dataset_type,
+    uint32_t &max_dm_num,
+    uint32_t &num_objects
+)
+{
+    
+    
+    
+}   // end of read_blur_params
+    
 
 
 #endif  // _BLUR_PARAMS_H_

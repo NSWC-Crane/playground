@@ -28,7 +28,8 @@ uint16_t min_dm_value = 0;
 uint16_t max_dm_value = br1_table.size()-1;
 
 
-void read_blur_params(std::vector<uint8_t> &depthmap_values, 
+void read_blur_params(std::string param_filename, 
+    std::vector<uint8_t> &depthmap_values, 
     std::vector<double> &sigma_table, 
     std::vector<uint8_t> &br1_table, 
     std::vector<uint8_t> &br2_table,

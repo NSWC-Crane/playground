@@ -35,6 +35,8 @@ void read_blur_params(std::vector<uint8_t> &depthmap_values,
     uint8_t &dataset_type,
     uint32_t &max_dm_num,
     uint32_t &num_objects
+    uint32_t &num_images,
+    std::string &save_location
 )
 {
     

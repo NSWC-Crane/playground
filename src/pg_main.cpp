@@ -41,6 +41,7 @@
 #include <cv_create_gaussian_kernel.h>
 #include <blur_params.h>
 #include <num2string.h>
+#include <file_ops.h>
 
 void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mask) 
 {
@@ -59,6 +60,7 @@ void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mas
     cv::add(prod1, prod2, dst);
 }
 
+
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
@@ -68,7 +70,33 @@ int main(int argc, char** argv)
 
     cv::RNG rng(1234567);
 
-    int num_of_imgs = 2;
+    std::vector<uint8_t> depthmap_values;
+    std::vector<double> sigma_table;
+    std::vector<uint8_t> br1_table;
+    std::vector<uint8_t> br2_table;
+    uint8_t dataset_type;
+    uint32_t max_dm_num;
+    uint32_t num_objects;
+    uint32_t num_images;
+    std::string save_location;
+
+
+    if (argc == 1)
+    {
+        std::cout << "Error: Missing confige file" << std::endl;
+        std::cout << "Usage: ./pg.exe <confige_file.txt>" << std::endl;
+        std::cout << std::endl;
+        std::cin.ignore();
+        return 0;
+    }
+
+    std::string param_filename = argv[1];
+    read_blur_params(param_filename, depthmap_values, sigma_table, br1_table, br2_table,
+        dataset_type, max_dm_num, num_objects, num_images, save_location);
+
+    uint16_t min_dm_value = 0;
+    uint16_t max_dm_value = br1_table.size()-1;
+
 
     // do work here
     try
@@ -77,9 +105,9 @@ int main(int argc, char** argv)
         new_shapes(test, img_h, img_w, rng);
 
         // create log file (relative to the build folder)
-        std::ofstream ofs("../log_file_javi.txt", std::ofstream::out);
+        std::ofstream ofs("../input_file_tests.txt", std::ofstream::out);
 
-        for (int i = 0; i < num_of_imgs; i++)
+        for (int i = 0; i < num_images; i++)
         {
             // generate dm_values
             std::vector<uint16_t> dm_values;
@@ -87,7 +115,7 @@ int main(int argc, char** argv)
 
             // create f1 & f2 images
             cv::Mat img_f1, img_f2;
-            generate_random_image(img_f1, rng, img_h, img_w, 40, 1.0);
+            generate_random_image(img_f1, rng, img_h, img_w, num_objects, 1.0);
             img_f1.convertTo(img_f1, CV_32FC3, (1 / 255.0));
             img_f2 = img_f1.clone();
 
@@ -101,7 +129,7 @@ int main(int argc, char** argv)
             // create depth map
             cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
 
-            // blur imgs using dm_values
+            // blur imgs using dm_values and a random masks
             for (int idx = 1; idx < dm_values.size(); ++idx)
             {
                 int min_N = ceil((max_dm_value) / (1 + exp(-0.2 * dm_values[idx] + (0.1 * max_dm_value))) + 3);
@@ -125,19 +153,18 @@ int main(int argc, char** argv)
             img_f1.convertTo(img_f1, CV_8UC3, 255);
             img_f2.convertTo(img_f2, CV_8UC3, 255);
 
-            // this is generic programming in c++!?? read more into this
-            std::string f1_filename = num2str<int>(i, "images/image_f1_%i.png");
-            std::string f2_filename = num2str<int>(i, "images/image_f2_%i.png");
-            std::string dmap_filename = num2str<int>(i, "depth_maps/dm_%i.png");
+            std::string f1_filename = num2str<int>(i, "images/image_f1_%04i.png");
+            std::string f2_filename = num2str<int>(i, "images/image_f2_%04i.png");
+            std::string dmap_filename = num2str<int>(i, "depth_maps/dm_%04i.png");
 
             // save images
             cv::imwrite("../" + f1_filename, img_f1);
             cv::imwrite("../" + f2_filename, img_f2);
             cv::imwrite("../" + dmap_filename, depth_map);
 
-            // log files
+            // log file names
             ofs << f1_filename << ", " << f2_filename << ", " << dmap_filename << "\n";
-        } // for loop
+        } // end of for loop
 
         // need to close file handler or data in buffer will be lost 
         ofs.close();

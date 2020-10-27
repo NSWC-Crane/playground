@@ -78,6 +78,7 @@ inline void blur_layer(cv::Mat& src,
 }   // end of blur_layer 
 
 
+//-----------------------------------------------------------------------------
 inline void blur_layer(cv::Mat& random_img,
     cv::Mat random_overlay,
     cv::Mat mask,
@@ -203,22 +204,36 @@ void generate_random_mask(cv::Mat& output_mask,
             // filled polygon
         case 2:
 
-            // 3 to 8 sided polygon
+            int radius;
+            int angle;
+
+            h = std::floor(0.5 * scale * rng.uniform(0, std::min(img_size.height, img_size.width)));
+            w = std::floor(0.5 * scale * rng.uniform(0, std::min(img_size.height, img_size.width)));
+
             s = rng.uniform(3, 9);
-            x_1 = -(0.5 * scale * nc);
-            x_2 = (1.5 * scale * nc);
-            y_1 = -(0.5 * scale * nr);
-            y_2 = (1.5 * scale * nc);
+            a = 360 / (double)s;
+
+            cv::Point center(rng.uniform(0, img_size.height), rng.uniform(0, img_size.width));
 
             pts.clear();
-
-            for (int jdx = 0; jdx < s; ++jdx)
+            for (int i = 0; i < s; i++)
             {
-                pts.push_back(cv::Point((long)(rng.uniform((int)x_1, (int)x_2) + x), (long)(rng.uniform((int)y_1, (int)y_2) + y)));
+                angle = rng.uniform(i * a, (i + 1) * a);
+
+                if (w / std::abs(std::cos((CV_PI / 180) * angle)) <= h / std::abs(std::sin((CV_PI / 180) * angle)))
+                {
+                    radius = std::abs(w / (double)std::cos((CV_PI / 180) * angle));
+                }
+                else
+                {
+                    radius = std::abs(h / (double)std::sin((CV_PI / 180) * angle));
+                }
+
+                pts.push_back(cv::Point(radius * std::cos((CV_PI / 180) * angle), radius * std::sin((CV_PI / 180) * angle)));
             }
 
             vpts[0] = pts;
-            cv::fillPoly(output_mask, vpts, C, cv::LineTypes::LINE_8, 0);
+            cv::fillPoly(output_mask, vpts, C, cv::LineTypes::LINE_8, 0, center);
 
             break;
 
@@ -277,7 +292,7 @@ void overlay_depthmap(cv::Mat& depth_map, cv::Mat mask, uint16_t dm_value)
 
 }
 
-
+//-----------------------------------------------------------------------------
 void new_shapes(cv::Mat& img, uint32_t img_h, uint32_t img_w, cv::RNG rng)
 {
     img = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));

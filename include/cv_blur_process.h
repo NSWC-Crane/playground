@@ -278,10 +278,9 @@ void overlay_depthmap(cv::Mat& depth_map, cv::Mat mask, uint16_t dm_value)
 }
 
 
-void new_shapes(cv::Mat& test, uint32_t img_h, uint32_t img_w, cv::RNG rng)
+void new_shapes(cv::Mat& img, uint32_t img_h, uint32_t img_w, cv::RNG rng)
 {
-    // NEW 
-    test = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));
+    img = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));
     std::vector<cv::Point> pts;
     std::vector<std::vector<cv::Point> > vpts(1);
     double scale = 0.2;
@@ -304,21 +303,25 @@ void new_shapes(cv::Mat& test, uint32_t img_h, uint32_t img_w, cv::RNG rng)
         pts.clear();
         for (int i = 0; i < s; i++)
         {
-            // randomly choose angle 
             angle = rng.uniform(i * a, (i + 1) * a);
-            // find maximum radius 
-            double angle_mod = angle % 90;
-            radius = w * std::cos((CV_PI / 180) * angle_mod);
-            // convert polar coordinates
+            
+            if (w/std::abs(std::cos((CV_PI / 180) * angle)) <= h/std::abs(std::sin((CV_PI / 180) * angle)))
+            {
+                radius = std::abs(w / (double)std::cos((CV_PI / 180) * angle));
+            }
+            else
+            {
+                radius = std::abs(h / (double)std::sin((CV_PI / 180) * angle));
+            }
+
             pts.push_back(cv::Point(radius * std::cos((CV_PI / 180) * angle), radius * std::sin((CV_PI / 180) * angle)));
         }
 
         vpts[0] = pts;
-        cv::fillPoly(test, vpts, cv::Scalar(255), cv::LineTypes::LINE_8, 0, center);
+        cv::fillPoly(img, vpts, cv::Scalar(255), cv::LineTypes::LINE_8, 0, center);
         // display bounded box 
-        cv::rectangle(test, cv::Point(center.x + w, center.y + h), cv::Point(center.x - w, center.y - h), cv::Scalar(255));
+        cv::rectangle(img, cv::Point(center.x - w, center.y - h), cv::Point(center.x + w, center.y + h), cv::Scalar(128));
     }
-    // END OF NEW
 }
 
 #endif // _CV_BLUR_PROCESS_H_

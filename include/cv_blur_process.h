@@ -2,6 +2,7 @@
 #define _CV_BLUR_PROCESS_H_
 
 #include <cstdint>
+#include <set>
 
 // OpenCV includes
 #include <opencv2/core.hpp>
@@ -10,72 +11,7 @@
 #include <opencv2/calib3d.hpp>
 
 #include <cv_random_image_gen.h>
-#include <blur_params.h>
 
-#include <set>
-
-/*
-This function will take a base image and overlay a set of shapes and then blur them according to the sigma value
-
-@param src input image that will be modified and returned.  This image should be CV_32FC3 type
-@param rng random number generator object
-@param sigma value that determines the blur kernel properties
-@param scale optional parameter to determine the size of the object
-*/
-inline void blur_layer(cv::Mat& src,
-    cv::RNG& rng,
-    double sigma,
-    double scale = 0.3)
-{
-
-    // get the image dimensions for other uses
-    int nr = src.rows;
-    int nc = src.cols;
-
-    // clone the source image
-    cv::Mat src_clone = src.clone();
-
-    // create the inital blank mask
-    cv::Mat BM_1 = cv::Mat(src.size(), CV_32FC3, cv::Scalar::all(0.0));
-
-    // generate a random color 
-    cv::Scalar C = (1.0 / 255.0) * cv::Scalar(rng.uniform(0, 256), rng.uniform(0, 256), rng.uniform(0, 256));
-
-    // generate a random point within the image using the cv::RNG uniform funtion (use nr,nc)
-    cv::Point center = cv::Point(rng.uniform(0, nc), rng.uniform(0, nr));
-
-    // generate the random radius values for an ellipse using one of the RNG functions
-    cv::Size axes = cv::Size(rng.uniform(20, 200), rng.uniform(20, 200));
-    double startAngle = 0;
-    double endAngle = 360;
-
-    // generate a random angle between 0 and 360 degrees for the ellipse using one of the RNG functions
-    double angle = rng.uniform(0, 360);
-
-    // use the cv::ellipse function and the random points to generate a random ellipse on top of the src_clone image
-    cv::ellipse(src_clone, center, axes, angle, startAngle, endAngle, C, -1);
-
-    // use the same points to generate the same ellipse on the mask with color = CV::Scalar(1.0, 1.0, 1.0)
-    cv::ellipse(BM_1, center, axes, angle, startAngle, endAngle, cv::Scalar(1.0, 1.0, 1.0), -1);
-
-
-    // blur the src_clone image with the overlay and blur the mask image using the sigma value to determine the blur kernel size
-    cv::boxFilter(src_clone, src_clone, -1, cv::Size(sigma, sigma), cv::Point(-1, -1), true);
-    cv::boxFilter(BM_1, BM_1, -1, cv::Size(sigma, sigma), cv::Point(-1, -1), true);
-
-
-    // multiply the src image times (cv::Scalar(1.0, 1.0, 1.0) - BM_1)
-    cv::Mat L1_1;
-    cv::multiply(src, cv::Scalar(1.0, 1.0, 1.0) - BM_1, L1_1);
-
-    // multiply the src_clone image times BM_1
-    cv::Mat L1_2;
-    cv::multiply(src_clone, BM_1, L1_2);
-
-    // set src equal to L1_1 + L1_2
-    cv::add(L1_1, L1_2, src);
-
-}   // end of blur_layer 
 
 
 //-----------------------------------------------------------------------------
@@ -87,11 +23,11 @@ inline void blur_layer(cv::Mat& random_img,
     double sigma,
     double scale = 0.3)
 {
-    // clone the source image
-    cv::Mat src_clone = random_img.clone();
+    random_img.convertTo(random_img, CV_32FC3);
+    random_overlay.convertTo(random_overlay, CV_32FC3);
+    mask.convertTo(mask, CV_32FC3);
 
     // blur the src_clone image with the overlay and blur the mask image
-    cv::filter2D(src_clone, src_clone, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
     cv::filter2D(mask, mask, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
     // multiply the src image times (cv::Scalar(1.0, 1.0, 1.0) - mask)
@@ -104,11 +40,12 @@ inline void blur_layer(cv::Mat& random_img,
     // set src equal to L1_1 + random_overlay
     cv::add(L1_1, random_overlay, random_img);
 
+    random_img.convertTo(random_img, CV_8UC3);
 }   // end of blur_layer 
 
 
 //-----------------------------------------------------------------------------
-void genrate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, std::vector<uint16_t> &dm_values, cv::RNG rng)
+void genrate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_t max_dm_num, std::vector<uint16_t> &dm_values, cv::RNG rng)
 {
     std::set<uint16_t, std::greater<uint16_t>> values;
 
@@ -136,14 +73,14 @@ void generate_random_mask(cv::Mat& output_mask,
     int nc = img_size.height;
 
     // create the image with a black background color
-    output_mask = cv::Mat(nr, nc, CV_32FC3, cv::Scalar::all(0.0));
+    output_mask = cv::Mat(nr, nc, CV_8UC3, cv::Scalar::all(0));
 
     // create N shapes
     for (idx = 0; idx < num_shapes; ++idx)
     {
 
         // color for all shapes
-        cv::Scalar C = cv::Scalar(1.0, 1.0, 1.0);
+        cv::Scalar C = cv::Scalar(1, 1, 1);
 
         // generate the random point
         long x = rng.uniform(0, nc);
@@ -204,7 +141,7 @@ void generate_random_mask(cv::Mat& output_mask,
             // filled polygon
         case 2:
 
-            int radius;
+            int radius, max_radius;
             int angle;
 
             h = std::floor(0.5 * scale * rng.uniform(0, std::min(img_size.height, img_size.width)));
@@ -222,13 +159,14 @@ void generate_random_mask(cv::Mat& output_mask,
 
                 if (w / std::abs(std::cos((CV_PI / 180) * angle)) <= h / std::abs(std::sin((CV_PI / 180) * angle)))
                 {
-                    radius = std::abs(w / (double)std::cos((CV_PI / 180) * angle));
+                    max_radius = std::abs(w / (double)std::cos((CV_PI / 180) * angle));
                 }
                 else
                 {
-                    radius = std::abs(h / (double)std::sin((CV_PI / 180) * angle));
+                    max_radius = std::abs(h / (double)std::sin((CV_PI / 180) * angle));
                 }
 
+                radius = rng.uniform(max_radius / 4, max_radius);
                 pts.push_back(cv::Point(radius * std::cos((CV_PI / 180) * angle), radius * std::sin((CV_PI / 180) * angle)));
             }
 
@@ -246,10 +184,10 @@ void generate_random_mask(cv::Mat& output_mask,
 
 //-----------------------------------------------------------------------------
 void generate_random_overlay(cv::Size img_size,
-    cv::RNG& rng, 
+    cv::RNG &rng, 
     uint32_t num_shapes, 
-    cv::Mat& output_img, 
-    cv::Mat& output_mask)
+    cv::Mat &output_img, 
+    cv::Mat &output_mask)
 {
     // define the number of shapes for generate_radnom_image
     uint32_t N = img_size.height * img_size.width * 0.004;
@@ -260,7 +198,6 @@ void generate_random_overlay(cv::Size img_size,
     // generate random image
     cv::Mat random_img;
     generate_random_image(random_img, rng, img_size.width, img_size.height, N, scale);
-    random_img.convertTo(random_img, CV_32FC3, (1.0/255.0));
 
     // generate random mask
     generate_random_mask(output_mask, img_size, rng, num_shapes);
@@ -272,11 +209,10 @@ void generate_random_overlay(cv::Size img_size,
 
 
 //-----------------------------------------------------------------------------
-void overlay_depthmap(cv::Mat& depth_map, cv::Mat mask, uint16_t dm_value)
+void overlay_depthmap(cv::Mat &depth_map, cv::Mat mask, uint16_t dm_value)
 {
     cv::Mat bg_mask;
     
-    mask.convertTo(mask, CV_8U); 
     cv::cvtColor(mask, mask, cv::COLOR_BGR2GRAY); 
 
     // set bg_mask = 1 - mask
@@ -292,8 +228,9 @@ void overlay_depthmap(cv::Mat& depth_map, cv::Mat mask, uint16_t dm_value)
 
 }
 
+
 //-----------------------------------------------------------------------------
-void new_shapes(cv::Mat& img, uint32_t img_h, uint32_t img_w, cv::RNG rng)
+void new_shapes(cv::Mat &img, uint32_t img_h, uint32_t img_w, cv::RNG rng)
 {
     img = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));
     std::vector<cv::Point> pts;
@@ -302,7 +239,7 @@ void new_shapes(cv::Mat& img, uint32_t img_h, uint32_t img_w, cv::RNG rng)
     int num_shapes = 10;
     int h, w, s;
     double a;
-    int radius;
+    int radius, max_radius;
     int angle;
 
     for (int N = 0; N < num_shapes; N++)
@@ -322,13 +259,13 @@ void new_shapes(cv::Mat& img, uint32_t img_h, uint32_t img_w, cv::RNG rng)
             
             if (w/std::abs(std::cos((CV_PI / 180) * angle)) <= h/std::abs(std::sin((CV_PI / 180) * angle)))
             {
-                radius = std::abs(w / (double)std::cos((CV_PI / 180) * angle));
+                max_radius = std::abs(w / (double)std::cos((CV_PI / 180) * angle));
             }
             else
             {
-                radius = std::abs(h / (double)std::sin((CV_PI / 180) * angle));
+                max_radius = std::abs(h / (double)std::sin((CV_PI / 180) * angle));
             }
-
+            radius = rng.uniform(max_radius/4, max_radius);
             pts.push_back(cv::Point(radius * std::cos((CV_PI / 180) * angle), radius * std::sin((CV_PI / 180) * angle)));
         }
 

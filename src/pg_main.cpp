@@ -43,23 +43,6 @@
 #include <num2string.h>
 #include <file_ops.h>
 
-void replace_pixels(cv::Mat src_img, cv::Mat src_blur, cv::Mat& dst, cv::Mat mask) 
-{
-    dst.create(src_blur.rows, src_img.cols, CV_8UC3);
-
-    cv::Mat mask_3C;
-    cv::cvtColor(mask, mask_3C, cv::COLOR_GRAY2BGR);  //3 channel mask
-
-    cv::Mat prod1, prod2, mask_inv;
-    cv::bitwise_not(mask_3C, mask_inv);
-    cv::subtract(mask_inv, 254, mask_inv);
-
-    cv::multiply(src_img, mask_inv, prod1);
-    cv::multiply(src_blur, mask_3C, prod2);
-
-    cv::add(prod1, prod2, dst);
-}
-
 
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
@@ -69,6 +52,12 @@ int main(int argc, char** argv)
     cv::Size img_size(img_h, img_w);
 
     cv::RNG rng(1234567);
+
+    cv::Mat img_f1, img_f2;
+    cv::Mat kernel;
+    cv::Mat output_img, mask;
+    std::vector<uint16_t> dm_values;
+    int min_N, max_N, N;
 
     std::vector<uint8_t> depthmap_values;
     std::vector<double> sigma_table;
@@ -84,7 +73,7 @@ int main(int argc, char** argv)
     if (argc == 1)
     {
         std::cout << "Error: Missing confige file" << std::endl;
-        std::cout << "Usage: ./pg.exe <confige_file.txt>" << std::endl;
+        std::cout << "Usage: ./pg <confige_file.txt>" << std::endl;
         std::cout << std::endl;
         std::cin.ignore();
         return 0;
@@ -94,80 +83,69 @@ int main(int argc, char** argv)
     read_blur_params(param_filename, depthmap_values, sigma_table, br1_table, br2_table,
         dataset_type, max_dm_num, num_objects, num_images, save_location);
 
-    uint16_t min_dm_value = 0;
-    uint16_t max_dm_value = br1_table.size()-1;
+    uint16_t min_dm_value = depthmap_values.front();
+    uint16_t max_dm_value = depthmap_values.back();
 
 
     // do work here
     try
     {
-        cv::Mat test(img_h, img_w, CV_8U, cv::Scalar::all(0));
-        new_shapes(test, img_h, img_w, rng);
+        std::ofstream DataLog_Stream("../input_file_m.txt", std::ofstream::out);
+        DataLog_Stream << "# Data Directory" << std::endl;
+        DataLog_Stream << std::endl;
+        DataLog_Stream << "# focus point 1 filename, focus point 2 filename, depthmap filename" << std::endl;
+        
 
-        // create log file (relative to the build folder)
-        std::ofstream ofs("../input_file_tests.txt", std::ofstream::out);
-
-        for (int i = 0; i < num_images; i++)
+        for (uint32_t i = 0; i<num_images; i++)
         {
             // generate dm_values
-            std::vector<uint16_t> dm_values;
-            genrate_depthmap_set(min_dm_value, max_dm_value, dm_values, rng);
-
-            // create f1 & f2 images
-            cv::Mat img_f1, img_f2;
+            genrate_depthmap_set(min_dm_value, max_dm_value, max_dm_num, dm_values, rng);
+            
             generate_random_image(img_f1, rng, img_h, img_w, num_objects, 1.0);
-            img_f1.convertTo(img_f1, CV_32FC3, (1 / 255.0));
             img_f2 = img_f1.clone();
 
             // create gaussian kernel and blur imgs
-            cv::Mat kernel;
             create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[0]]], kernel);
             cv::filter2D(img_f1, img_f1, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+
             create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[0]]], kernel);
             cv::filter2D(img_f2, img_f2, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
             // create depth map
             cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
 
-            // blur imgs using dm_values and a random masks
-            for (int idx = 1; idx < dm_values.size(); ++idx)
+            // blur imgs using dm_values and random masks
+            for (uint32_t idx = 1; idx<dm_values.size(); ++idx)
             {
-                int min_N = ceil((max_dm_value) / (1 + exp(-0.2 * dm_values[idx] + (0.1 * max_dm_value))) + 3);
-                int max_N = ceil(1.25 * min_N);
-                int N = rng.uniform(min_N, max_N + 1);
+                min_N = ceil((max_dm_value) / (1 + exp(-0.2 * dm_values[idx] + (0.1 * max_dm_value))) + 3);
+                max_N = ceil(1.25 * min_N);
+                N = rng.uniform(min_N, max_N + 1);
 
                 // generate random overlay
-                cv::Mat output_img, mask;
                 generate_random_overlay(img_size, rng, N, output_img, mask);
-
                 // overlay depthmap
                 overlay_depthmap(depth_map, mask, dm_values[idx]);
 
-                // generate kernel and blur scenes
+                // blur f1
                 create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[idx]]], kernel);
                 blur_layer(img_f1, output_img, mask, kernel, rng, 3);
+                // blur f2
                 create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[idx]]], kernel);
                 blur_layer(img_f2, output_img, mask, kernel, rng, 3);
             }
 
-            img_f1.convertTo(img_f1, CV_8UC3, 255);
-            img_f2.convertTo(img_f2, CV_8UC3, 255);
+            std::string f1_filename = save_location + num2str<int>(i, "image_f1_%04i.png");
+            std::string f2_filename = save_location + num2str<int>(i, "image_f2_%04i.png");
+            std::string dmap_filename = save_location + num2str<int>(i, "dm_%04i.png");
 
-            std::string f1_filename = num2str<int>(i, "images/image_f1_%04i.png");
-            std::string f2_filename = num2str<int>(i, "images/image_f2_%04i.png");
-            std::string dmap_filename = num2str<int>(i, "depth_maps/dm_%04i.png");
+            cv::imwrite(f1_filename, img_f1);
+            cv::imwrite(f2_filename, img_f2);
+            cv::imwrite(dmap_filename, depth_map);
 
-            // save images
-            cv::imwrite("../" + f1_filename, img_f1);
-            cv::imwrite("../" + f2_filename, img_f2);
-            cv::imwrite("../" + dmap_filename, depth_map);
-
-            // log file names
-            ofs << f1_filename << ", " << f2_filename << ", " << dmap_filename << "\n";
+            DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << "\n";
         } // end of for loop
 
-        // need to close file handler or data in buffer will be lost 
-        ofs.close();
+        DataLog_Stream.close();
     }
     catch(std::exception& e)
     {

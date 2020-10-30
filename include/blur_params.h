@@ -50,47 +50,47 @@ void read_blur_params(std::string param_filename,
     {
         switch (idx)
         {
-        case 0:
-            for (uint32_t i = 0; i < params[idx].size(); i++)
-            {
-                depthmap_values.push_back((uint8_t)std::stoi(params[idx][i]));
-            }
-            break;
-        case 1:
-            for (uint32_t i = 0; i < params[idx].size(); i++)
-            {
-                sigma_table.push_back(std::stod(params[idx][i]));
-            }
-            break;
-        case 2:
-            for (uint32_t i = 0; i < params[idx].size(); i++)
-            {
-                br1_table.push_back((uint8_t)std::stod(params[idx][i]));
-            }
-            break;
-        case 3:
-            for (uint32_t i = 0; i < params[idx].size(); i++)
-            {
-                br2_table.push_back((uint8_t)std::stod(params[idx][i]));
-            }
-            break;
-        case 4:
-            dataset_type = (uint8_t)std::stoi(params[idx][0]);
-            break;
-        case 5:
-            max_dm_num = (uint32_t)std::stoi(params[idx][0]);
-            break;
-        case 6:
-            num_objects = (uint32_t)std::stoi(params[idx][0]);
-            break;
-        case 7:
-            num_images = (uint32_t)std::stoi(params[idx][0]);
-            break;
-        case 8:
-            save_location = params[idx][0];
-            break;
-        default:
-            break;
+            case 0:
+                for (uint32_t i = 0; i < params[idx].size(); i++)
+                {
+                    depthmap_values.push_back((uint8_t)std::stoi(params[idx][i]));
+                }
+                break;
+            case 1:
+                for (uint32_t i = 0; i < params[idx].size(); i++)
+                {
+                    sigma_table.push_back(std::stod(params[idx][i]));
+                }
+                break;
+            case 2:
+                for (uint32_t i = 0; i < params[idx].size(); i++)
+                {
+                    br1_table.push_back((uint8_t)std::stod(params[idx][i]));
+                }
+                break;
+            case 3:
+                for (uint32_t i = 0; i < params[idx].size(); i++)
+                {
+                    br2_table.push_back((uint8_t)std::stod(params[idx][i]));
+                }
+                break;
+            case 4:
+                dataset_type = (uint8_t)std::stoi(params[idx][0]);
+                break;
+            case 5:
+                max_dm_num = (uint32_t)std::stoi(params[idx][0]);
+                break;
+            case 6:
+                num_objects = (uint32_t)std::stoi(params[idx][0]);
+                break;
+            case 7:
+                num_images = (uint32_t)std::stoi(params[idx][0]);
+                break;
+            case 8:
+                save_location = params[idx][0];
+                break;
+            default:
+                break;
         }
     }
 

@@ -99,7 +99,7 @@ int main(int argc, char** argv)
         for (uint32_t i = 0; i<num_images; i++)
         {
             // generate dm_values
-            genrate_depthmap_set(min_dm_value, max_dm_value, max_dm_num, dm_values, rng);
+            genrate_depthmap_set(min_dm_value, max_dm_value, max_dm_num, depthmap_values, dm_values, rng);
             
             generate_random_image(img_f1, rng, img_h, img_w, num_objects, 1.0);
             img_f2 = img_f1.clone();

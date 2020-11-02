@@ -45,17 +45,18 @@ inline void blur_layer(cv::Mat& random_img,
 
 
 //-----------------------------------------------------------------------------
-void genrate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_t max_dm_num, std::vector<uint16_t> &dm_values, cv::RNG rng)
+void genrate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_t max_dm_num, 
+    const std::vector<uint8_t> depthmap_values, std::vector<uint16_t> &dm_values, cv::RNG rng)
 {
-    std::set<uint16_t, std::greater<uint16_t>> values;
+    std::set<uint16_t, std::greater<uint16_t>> set_values;
 
-    for (int i = 0; i < max_dm_num; i++)
+    for (int idx = 0; idx<max_dm_num; idx++)
     {
-        uint16_t idx = rng.uniform(min_dm_value, max_dm_value+1);
-        values.insert(idx);
+        uint16_t random_idx = rng.uniform(0, depthmap_values.size());
+        set_values.insert(depthmap_values.at(random_idx));
     }
 
-    dm_values = std::vector<uint16_t>(values.begin(), values.end());
+    dm_values = std::vector<uint16_t>(set_values.begin(), set_values.end());
 }
 
 

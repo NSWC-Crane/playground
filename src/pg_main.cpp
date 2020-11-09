@@ -92,6 +92,7 @@ int main(int argc, char** argv)
     {
         std::ofstream DataLog_Stream("../input_file_m.txt", std::ofstream::out);
         DataLog_Stream << "# Data Directory" << std::endl;
+        DataLog_Stream << save_location << std::endl;
         DataLog_Stream << std::endl;
         DataLog_Stream << "# focus point 1 filename, focus point 2 filename, depthmap filename" << std::endl;
         

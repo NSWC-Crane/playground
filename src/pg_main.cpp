@@ -58,6 +58,7 @@ int main(int argc, char** argv)
     cv::Mat output_img, mask;
     std::vector<uint16_t> dm_values;
     int min_N, max_N, N;
+    double scale = 0.1;
 
     std::vector<uint8_t> depthmap_values;
     std::vector<double> sigma_table;
@@ -68,7 +69,6 @@ int main(int argc, char** argv)
     uint32_t num_objects;
     uint32_t num_images;
     std::string save_location;
-
 
     if (argc == 1)
     {
@@ -86,7 +86,6 @@ int main(int argc, char** argv)
     uint16_t min_dm_value = depthmap_values.front();
     uint16_t max_dm_value = depthmap_values.back();
 
-
     // do work here
     try
     {
@@ -96,13 +95,12 @@ int main(int argc, char** argv)
         DataLog_Stream << std::endl;
         DataLog_Stream << "# focus point 1 filename, focus point 2 filename, depthmap filename" << std::endl;
         
-
-        for (uint32_t i = 0; i<num_images; i++)
+        for (uint32_t i = 0; i<num_images; ++i)
         {
             // generate dm_values
             genrate_depthmap_set(min_dm_value, max_dm_value, max_dm_num, depthmap_values, dm_values, rng);
             
-            generate_random_image(img_f1, rng, img_h, img_w, num_objects, 1.0);
+            generate_random_image(img_f1, rng, img_h, img_w, 800, 0.1);
             img_f2 = img_f1.clone();
 
             // create gaussian kernel and blur imgs
@@ -122,14 +120,19 @@ int main(int argc, char** argv)
                 max_N = ceil(1.25 * min_N);
                 N = rng.uniform(min_N, max_N + 1);
 
+                // define the scale factor
+                scale = 80.0 / (double)img_size.width;
+
                 // generate random overlay
-                generate_random_overlay(img_size, rng, N, output_img, mask);
+                generate_random_overlay(img_size, rng, N, output_img, mask, scale);
+
                 // overlay depthmap
                 overlay_depthmap(depth_map, mask, dm_values[idx]);
 
                 // blur f1
                 create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[idx]]], kernel);
                 blur_layer(img_f1, output_img, mask, kernel, rng, 3);
+
                 // blur f2
                 create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[idx]]], kernel);
                 blur_layer(img_f2, output_img, mask, kernel, rng, 3);
@@ -143,7 +146,7 @@ int main(int argc, char** argv)
             cv::imwrite(f2_filename, img_f2);
             cv::imwrite(dmap_filename, depth_map);
 
-            DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << "\n";
+            DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
         } // end of for loop
 
         DataLog_Stream.close();

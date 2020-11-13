@@ -19,7 +19,14 @@ void generate_random_image(
     double scale   
 )
 {
-    unsigned int idx;
+    unsigned int idx, jdx;
+
+    long x, y;
+    long r1, r2, h, w, s;
+    double a, angle;    
+    int32_t radius, max_radius;
+
+    long min_dim = std::min(nr, nc);
 
     // get the random background color
     cv::Scalar bg_color = cv::Scalar(rng.uniform(0, 256), rng.uniform(0, 256), rng.uniform(0, 256));
@@ -41,23 +48,22 @@ void generate_random_image(
         }
 
         // generate the random point
-        long x = rng.uniform(0, nc);
-        long y = rng.uniform(0, nr);
-        long r1, r2, h, w, s;
-        double a;
+        x = rng.uniform(0, nc);
+        y = rng.uniform(0, nr);
+
 
         cv::RotatedRect rect;
         cv::Point2f vertices2f[4];
         cv::Point vertices[4];
-        std::vector<cv::Point> pts(3);
+        std::vector<cv::Point> pts;
         std::vector<std::vector<cv::Point> > vpts(1);
-        vpts.push_back(pts);
+        //vpts.push_back(pts);
 
 
-        long x_1; //= -window_width / 2;
-        long x_2; //= window_width * 3 / 2;
-        long y_1; //= -window_width / 2;
-        long y_2; //= window_width * 3 / 2;
+        //long x_1; //= -window_width / 2;
+        //long x_2; //= window_width * 3 / 2;
+        //long y_1; //= -window_width / 2;
+        //long y_2; //= window_width * 3 / 2;
 
         // get the shape type
         switch (rng.uniform(0, 3))
@@ -66,8 +72,8 @@ void generate_random_image(
         case 0:
             
             // pick a random radi for the ellipse
-            r1 = std::floor(0.5 * scale * rng.uniform(0, std::min(nr, nc)));
-            r2 = std::floor(0.5 * scale * rng.uniform(0, std::min(nr, nc)));
+            r1 = std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
+            r2 = std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
             a = rng.uniform(0.0, 360.0);
 
             cv::ellipse(img, cv::Point(x, y), cv::Size(r1, r2), a, 0.0, 360.0, C, -1, cv::LineTypes::LINE_8, 0);
@@ -76,8 +82,8 @@ void generate_random_image(
         // filled rectangle
         case 1:
 
-            h = std::floor(scale * rng.uniform(0, std::min(nr, nc)));
-            w = std::floor(scale * rng.uniform(0, std::min(nr, nc)));
+            h = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            w = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
             a = rng.uniform(0.0, 360.0);
 
             // Create the rotated rectangle
@@ -96,21 +102,33 @@ void generate_random_image(
             cv::fillConvexPoly(img, vertices, 4, C);
             break;
 
-        // filled polygon
+        // 3 to 8 sided filled polygon
         case 2:
 
-            // 3 to 8 sided polygon
+            h = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            w = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+
             s = rng.uniform(3, 9);
-            x_1 = -(0.5 * scale * nc);
-            x_2 = (1.5 * scale * nc);
-            y_1 = -(0.5 * scale * nr);
-            y_2 = (1.5 * scale * nc);
+            a = 360.0 / (double)s;
+
+            cv::Point center(rng.uniform(0, nr), rng.uniform(0, nc));
 
             pts.clear();
-
-            for (int jdx = 0; jdx < s; ++jdx)
+            for (jdx = 0; jdx < s; ++jdx)
             {
-                pts.push_back(cv::Point((long)(rng.uniform((int)x_1, (int)x_2) + x), (long)(rng.uniform((int)y_1, (int)y_2) + y)));
+                angle = rng.uniform(jdx * a, (jdx + 1) * a);
+
+                if (w / std::abs(std::cos((CV_PI / 180.0) * angle)) <= h / std::abs(std::sin((CV_PI / 180.0) * angle)))
+                {
+                    max_radius = std::abs(w / (double)std::cos((CV_PI / 180.0) * angle));
+                }
+                else
+                {
+                    max_radius = std::abs(h / (double)std::sin((CV_PI / 180.0) * angle));
+                }
+
+                radius = rng.uniform(max_radius >> 2, max_radius);
+                pts.push_back(cv::Point(radius * std::cos((CV_PI / 180.0) * angle), radius * std::sin((CV_PI / 180.0) * angle)));
             }
 
             vpts[0] = pts;

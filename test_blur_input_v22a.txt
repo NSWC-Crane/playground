@@ -19,7 +19,7 @@
 10
 
 #7 starting number of objects in the farthest layer
-40
+60
 
 #8 number of images to generate
 10

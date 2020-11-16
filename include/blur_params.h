@@ -28,7 +28,7 @@ uint16_t min_dm_value = 0;
 uint16_t max_dm_value = br1_table.size()-1;
 
 
-#include "file_parser.h"
+#include <file_parser.h>
 
 void read_blur_params(std::string param_filename, 
     std::vector<uint8_t> &depthmap_values, 

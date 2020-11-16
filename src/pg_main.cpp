@@ -42,6 +42,7 @@
 #include <blur_params.h>
 #include <num2string.h>
 #include <file_ops.h>
+#include <make_dir.h>
 
 
 // ----------------------------------------------------------------------------------------
@@ -89,7 +90,7 @@ int main(int argc, char** argv)
     // do work here
     try
     {
-        std::ofstream DataLog_Stream("../input_file_m.txt", std::ofstream::out);
+        std::ofstream DataLog_Stream(save_location + "input_file_m.txt", std::ofstream::out);
         DataLog_Stream << "# Data Directory" << std::endl;
         DataLog_Stream << save_location << std::endl;
         DataLog_Stream << std::endl;
@@ -138,9 +139,9 @@ int main(int argc, char** argv)
                 blur_layer(img_f2, output_img, mask, kernel, rng, 3);
             }
 
-            std::string f1_filename = save_location + num2str<int>(i, "image_f1_%04i.png");
-            std::string f2_filename = save_location + num2str<int>(i, "image_f2_%04i.png");
-            std::string dmap_filename = save_location + num2str<int>(i, "dm_%04i.png");
+            std::string f1_filename = save_location + num2str<int>(i, "images/image_f1_%04i.png");
+            std::string f2_filename = save_location + num2str<int>(i, "images/image_f2_%04i.png");
+            std::string dmap_filename = save_location + num2str<int>(i, "depth_maps/dm_%04i.png");
 
             cv::imwrite(f1_filename, img_f1);
             cv::imwrite(f2_filename, img_f2);

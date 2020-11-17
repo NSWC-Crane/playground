@@ -87,6 +87,10 @@ int main(int argc, char** argv)
     uint16_t min_dm_value = depthmap_values.front();
     uint16_t max_dm_value = depthmap_values.back();
 
+    // create results directories if they do not exist
+    mkdir(save_location + "images");
+    mkdir(save_location + "depth_maps");
+
     // do work here
     try
     {

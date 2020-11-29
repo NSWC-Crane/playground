@@ -52,7 +52,7 @@ int main(int argc, char** argv)
     uint32_t img_w = 500;
     cv::Size img_size(img_h, img_w);
 
-    cv::RNG rng(1234567);
+    cv::RNG rng(time(NULL));
 
     cv::Mat img_f1, img_f2;
     cv::Mat kernel;
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
     // do work here
     try
     {
-        std::ofstream DataLog_Stream(save_location + "input_file_m.txt", std::ofstream::out);
+        std::ofstream DataLog_Stream(save_location + "input_file.txt", std::ofstream::out);
         DataLog_Stream << "# Data Directory" << std::endl;
         DataLog_Stream << save_location << std::endl;
         DataLog_Stream << std::endl;
@@ -121,12 +121,12 @@ int main(int argc, char** argv)
             // blur imgs using dm_values and random masks
             for (uint32_t idx = 1; idx<dm_values.size(); ++idx)
             {
-                min_N = ceil((max_dm_value) / (1 + exp(-0.2 * dm_values[idx] + (0.1 * max_dm_value))) + 3);
-                max_N = ceil(1.25 * min_N);
+                min_N = (int32_t)ceil((num_objects) / (1 + exp(-0.2 * dm_values[idx] + (0.0425 * num_objects))) + 2);
+                max_N = (int32_t)ceil(1.25 * min_N);
                 N = rng.uniform(min_N, max_N + 1);
 
                 // define the scale factor
-                scale = 80.0 / (double)img_size.width;
+                scale = 100.0 / (double)img_size.width;
 
                 // generate random overlay
                 generate_random_overlay(img_size, rng, N, output_img, mask, scale);
@@ -143,14 +143,15 @@ int main(int argc, char** argv)
                 blur_layer(img_f2, output_img, mask, kernel, rng, 3);
             }
 
-            std::string f1_filename = save_location + num2str<int>(i, "images/image_f1_%04i.png");
-            std::string f2_filename = save_location + num2str<int>(i, "images/image_f2_%04i.png");
-            std::string dmap_filename = save_location + num2str<int>(i, "depth_maps/dm_%04i.png");
+            std::string f1_filename = num2str<int>(i, "images/image_f1_%04i.png");
+            std::string f2_filename = num2str<int>(i, "images/image_f2_%04i.png");
+            std::string dmap_filename = num2str<int>(i, "depth_maps/dm_%04i.png");
 
-            cv::imwrite(f1_filename, img_f1);
-            cv::imwrite(f2_filename, img_f2);
-            cv::imwrite(dmap_filename, depth_map);
+            cv::imwrite(save_location + f1_filename, img_f1);
+            cv::imwrite(save_location + f2_filename, img_f2);
+            cv::imwrite(save_location + dmap_filename, depth_map);
 
+            std::cout << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
             DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
         } // end of for loop
 

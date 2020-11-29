@@ -50,9 +50,9 @@ void genrate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_t
 {
     std::set<uint16_t, std::greater<uint16_t>> set_values;
 
-    for (int idx = 0; idx<max_dm_num; idx++)
+    for (uint32_t idx = 0; idx<max_dm_num; idx++)
     {
-        uint16_t random_idx = rng.uniform(0, depthmap_values.size());
+        uint16_t random_idx = rng.uniform(0, (int32_t)depthmap_values.size());
         set_values.insert(depthmap_values.at(random_idx));
     }
 
@@ -115,8 +115,8 @@ void generate_random_mask(cv::Mat& output_mask,
         case 0:
             
             // pick a random radi for the ellipse
-            r1 = std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
-            r2 = std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
+            r1 = (long)std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
+            r2 = (long)std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
             a = rng.uniform(0.0, 360.0);
 
             cv::ellipse(output_mask, cv::Point(x, y), cv::Size(r1, r2), a, 0.0, 360.0, C, -1, cv::LineTypes::LINE_8, 0);
@@ -125,12 +125,12 @@ void generate_random_mask(cv::Mat& output_mask,
         // filled rectangle
         case 1:
 
-            h = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
-            w = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            h = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            w = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
             a = rng.uniform(0.0, 360.0);
 
             // Create the rotated rectangle
-            rect = cv::RotatedRect(cv::Point(x, y), cv::Size(w, h), a);
+            rect = cv::RotatedRect(cv::Point(x, y), cv::Size(w, h), (float)a);
 
             // We take the edges that OpenCV calculated for us
             rect.points(vertices2f);
@@ -148,8 +148,8 @@ void generate_random_mask(cv::Mat& output_mask,
         // filled polygon
         case 2:
 
-            h = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
-            w = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            h = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            w = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
 
             s = rng.uniform(3, 9);
             a = 360.0 / (double)s;
@@ -163,15 +163,15 @@ void generate_random_mask(cv::Mat& output_mask,
 
                 if (w / std::abs(std::cos((CV_PI / 180.0) * angle)) <= h / std::abs(std::sin((CV_PI / 180.0) * angle)))
                 {
-                    max_radius = std::abs(w / (double)std::cos((CV_PI / 180.0) * angle));
+                    max_radius = (int32_t)std::abs(w / (double)std::cos((CV_PI / 180.0) * angle));
                 }
                 else
                 {
-                    max_radius = std::abs(h / (double)std::sin((CV_PI / 180.0) * angle));
+                    max_radius = (int32_t)std::abs(h / (double)std::sin((CV_PI / 180.0) * angle));
                 }
 
                 radius = rng.uniform(max_radius >> 2, max_radius);
-                pts.push_back(cv::Point(radius * std::cos((CV_PI / 180.0) * angle), radius * std::sin((CV_PI / 180.0) * angle)));
+                pts.push_back(cv::Point((int32_t)(radius * std::cos((CV_PI / 180.0) * angle)), (int32_t)(radius * std::sin((CV_PI / 180.0) * angle))));
             }
 
             vpts[0] = pts;
@@ -195,7 +195,7 @@ void generate_random_overlay(cv::Size img_size,
     double scale = 0.1)
 {
     // define the number of shapes for generate_radnom_image
-    uint32_t N = img_size.height * img_size.width * 0.004;
+    uint32_t N = (uint32_t)(img_size.height * img_size.width * 0.004);
 
     // generate random image
     cv::Mat random_img;
@@ -239,15 +239,15 @@ void new_shapes(cv::Mat &img, uint32_t img_h, uint32_t img_w, cv::RNG rng)
     std::vector<std::vector<cv::Point> > vpts(1);
     double scale = 0.2;
     int num_shapes = 10;
-    int h, w, s;
+    long h, w, s;
     double a;
     int radius, max_radius;
     int angle;
 
     for (int N = 0; N < num_shapes; N++)
     {
-        h = std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
-        w = std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
+        h = (long)std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
+        w = (long)std::floor(0.5 * scale * rng.uniform(0, std::min(img_h, img_w)));
         
         s = rng.uniform(3, 9);
         a = 360 / (double)s;
@@ -257,18 +257,18 @@ void new_shapes(cv::Mat &img, uint32_t img_h, uint32_t img_w, cv::RNG rng)
         pts.clear();
         for (int i = 0; i < s; i++)
         {
-            angle = rng.uniform(i * a, (i + 1) * a);
+            angle = (int32_t)rng.uniform((double)(i * a), (double)((i + 1) * a));
             
-            if (w/std::abs(std::cos((CV_PI / 180) * angle)) <= h/std::abs(std::sin((CV_PI / 180) * angle)))
+            if (w/std::abs(std::cos((CV_PI / 180.0) * angle)) <= h/std::abs(std::sin((CV_PI / 180.0) * angle)))
             {
-                max_radius = std::abs(w / (double)std::cos((CV_PI / 180) * angle));
+                max_radius = (int32_t)std::abs(w / (double)std::cos((CV_PI / 180.0) * angle));
             }
             else
             {
-                max_radius = std::abs(h / (double)std::sin((CV_PI / 180) * angle));
+                max_radius = (int32_t)std::abs(h / (double)std::sin((CV_PI / 180.0) * angle));
             }
             radius = rng.uniform(max_radius/4, max_radius);
-            pts.push_back(cv::Point(radius * std::cos((CV_PI / 180) * angle), radius * std::sin((CV_PI / 180) * angle)));
+            pts.push_back(cv::Point((int32_t)(radius * std::cos((CV_PI / 180.0) * angle)), (int32_t)(radius * std::sin((CV_PI / 180.0) * angle))));
         }
 
         vpts[0] = pts;

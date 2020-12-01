@@ -72,8 +72,8 @@ void generate_random_image(
         case 0:
             
             // pick a random radi for the ellipse
-            r1 = std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
-            r2 = std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
+            r1 = (long)std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
+            r2 = (long)std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
             a = rng.uniform(0.0, 360.0);
 
             cv::ellipse(img, cv::Point(x, y), cv::Size(r1, r2), a, 0.0, 360.0, C, -1, cv::LineTypes::LINE_8, 0);
@@ -82,12 +82,12 @@ void generate_random_image(
         // filled rectangle
         case 1:
 
-            h = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
-            w = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            h = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            w = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
             a = rng.uniform(0.0, 360.0);
 
             // Create the rotated rectangle
-            rect = cv::RotatedRect(cv::Point(x,y), cv::Size(w,h), a);
+            rect = cv::RotatedRect(cv::Point(x,y), cv::Size(w,h), (float)a);
 
             // We take the edges that OpenCV calculated for us
             rect.points(vertices2f);
@@ -105,8 +105,8 @@ void generate_random_image(
         // 3 to 8 sided filled polygon
         case 2:
 
-            h = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
-            w = std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            h = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
+            w = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
 
             s = rng.uniform(3, 9);
             a = 360.0 / (double)s;
@@ -120,15 +120,15 @@ void generate_random_image(
 
                 if (w / std::abs(std::cos((CV_PI / 180.0) * angle)) <= h / std::abs(std::sin((CV_PI / 180.0) * angle)))
                 {
-                    max_radius = std::abs(w / (double)std::cos((CV_PI / 180.0) * angle));
+                    max_radius = (int32_t)std::abs(w / (double)std::cos((CV_PI / 180.0) * angle));
                 }
                 else
                 {
-                    max_radius = std::abs(h / (double)std::sin((CV_PI / 180.0) * angle));
+                    max_radius = (int32_t)std::abs(h / (double)std::sin((CV_PI / 180.0) * angle));
                 }
 
                 radius = rng.uniform(max_radius >> 2, max_radius);
-                pts.push_back(cv::Point(radius * std::cos((CV_PI / 180.0) * angle), radius * std::sin((CV_PI / 180.0) * angle)));
+                pts.push_back(cv::Point((int32_t)(radius * std::cos((CV_PI / 180.0) * angle)), (int32_t)(radius * std::sin((CV_PI / 180.0) * angle))));
             }
 
             vpts[0] = pts;

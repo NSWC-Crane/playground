@@ -57,6 +57,7 @@ int main(int argc, char** argv)
     cv::Mat img_f1, img_f2;
     cv::Mat kernel;
     cv::Mat output_img, mask;
+    cv::Mat f1_layer, f2_layer;
     std::vector<uint16_t> dm_values;
     int min_N, max_N, N;
     double scale = 0.1;
@@ -105,7 +106,7 @@ int main(int argc, char** argv)
             // generate dm_values
             genrate_depthmap_set(min_dm_value, max_dm_value, max_dm_num, depthmap_values, dm_values, rng);
             
-            generate_random_image(img_f1, rng, img_h, img_w, 800, 0.1);
+            generate_random_image(img_f1, rng, img_h, img_w, 1000, 0.1);
             img_f2 = img_f1.clone();
 
             // create gaussian kernel and blur imgs
@@ -121,6 +122,9 @@ int main(int argc, char** argv)
             // blur imgs using dm_values and random masks
             for (uint32_t idx = 1; idx<dm_values.size(); ++idx)
             {
+                f1_layer = img_f1.clone();
+                f2_layer = img_f2.clone();
+
                 min_N = (int32_t)ceil((num_objects) / (1 + exp(-0.2 * dm_values[idx] + (0.0425 * num_objects))) + 2);
                 max_N = (int32_t)ceil(1.25 * min_N);
                 N = rng.uniform(min_N, max_N + 1);
@@ -131,16 +135,19 @@ int main(int argc, char** argv)
                 // generate random overlay
                 generate_random_overlay(img_size, rng, N, output_img, mask, scale);
 
+                overlay_image(f1_layer, output_img, mask);
+                overlay_image(f2_layer, output_img, mask);
+
                 // overlay depthmap
                 overlay_depthmap(depth_map, mask, dm_values[idx]);
 
                 // blur f1
                 create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_values[idx]]], kernel);
-                blur_layer(img_f1, output_img, mask, kernel, rng, 3);
+                blur_layer(f1_layer, img_f1, mask, kernel, rng);
 
                 // blur f2
                 create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_values[idx]]], kernel);
-                blur_layer(img_f2, output_img, mask, kernel, rng, 3);
+                blur_layer(f2_layer, img_f2, mask, kernel, rng);
             }
 
             std::string f1_filename = num2str<int>(i, "images/image_f1_%04i.png");

@@ -48,8 +48,8 @@
 // ----------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-    uint32_t img_h = 500;
-    uint32_t img_w = 500;
+    uint32_t img_h = 480;
+    uint32_t img_w = 480;
     cv::Size img_size(img_h, img_w);
 
     cv::RNG rng(time(NULL));
@@ -126,7 +126,7 @@ int main(int argc, char** argv)
                 N = rng.uniform(min_N, max_N + 1);
 
                 // define the scale factor
-                scale = 100.0 / (double)img_size.width;
+                scale = 90.0 / (double)img_size.width;
 
                 // generate random overlay
                 generate_random_overlay(img_size, rng, N, output_img, mask, scale);

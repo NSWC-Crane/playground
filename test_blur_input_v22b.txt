@@ -13,16 +13,16 @@
 11,10,9,9,8,8,7,7,6,6,5,5,4,4,3,3,3,2,2,1,1
 
 #5 dataset type: 0 -> random image, 1 -> other
-0
+1
 
 #6 maximum number of depthmap values within a single image
 8
 
 #7 starting number of objects in the farthest layer
-60
+50
 
 #8 number of images to generate
-150
+50
 
 #9 save location
 D:/Projects/playground/results/tb22b_train/

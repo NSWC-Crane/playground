@@ -45,7 +45,7 @@ inline void blur_layer(cv::Mat& input_img,
 
 
 //-----------------------------------------------------------------------------
-void genrate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_t max_dm_num, 
+void generate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_t max_dm_num, 
     const std::vector<uint8_t> depthmap_values, std::vector<uint16_t> &dm_values, cv::RNG rng)
 {
     std::set<uint16_t, std::greater<uint16_t>> set_values;
@@ -73,13 +73,6 @@ void generate_random_mask(cv::Mat& output_mask,
 
     int nr = img_size.width;
     int nc = img_size.height;
-    //int min_dim;
-
-    //long x, y;
-    //long r1, r2, h, w, s;
-    //double a, angle;
-
-    //int32_t radius, max_radius;
 
     // create the image with a black background color
     output_mask = cv::Mat(nr, nc, CV_8UC3, cv::Scalar::all(0));
@@ -91,97 +84,8 @@ void generate_random_mask(cv::Mat& output_mask,
         // color for all shapes
         cv::Scalar C = cv::Scalar(1, 1, 1);
 
+        // generate the random shape
         generate_random_shape(output_mask, rng, nr, nc, C, scale);
-
-        //// generate the random point
-        //x = rng.uniform(0, nc);
-        //y = rng.uniform(0, nr);
-        //
-        //cv::RotatedRect rect;
-        //cv::Point2f vertices2f[4];
-        //cv::Point vertices[4];
-        //std::vector<cv::Point> pts;
-        //std::vector<std::vector<cv::Point> > vpts(1);
-        ////vpts.push_back(pts);
-
-        //min_dim = std::min(nr, nc);
-        ////long x_1; //= -window_width / 2;
-        ////long x_2; //= window_width * 3 / 2;
-        ////long y_1; //= -window_width / 2;
-        ////long y_2; //= window_width * 3 / 2;
-
-        //// get the shape type
-        //switch (rng.uniform(0, 3))
-        //{
-        //// filled ellipse
-        //case 0:
-        //    
-        //    // pick a random radi for the ellipse
-        //    r1 = (long)std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
-        //    r2 = (long)std::floor(0.5 * scale * rng.uniform(min_dim >> 2, min_dim));
-        //    a = rng.uniform(0.0, 360.0);
-
-        //    cv::ellipse(output_mask, cv::Point(x, y), cv::Size(r1, r2), a, 0.0, 360.0, C, -1, cv::LineTypes::LINE_8, 0);
-        //    break;
-
-        //// filled rectangle
-        //case 1:
-
-        //    h = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
-        //    w = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
-        //    a = rng.uniform(0.0, 360.0);
-
-        //    // Create the rotated rectangle
-        //    rect = cv::RotatedRect(cv::Point(x, y), cv::Size(w, h), (float)a);
-
-        //    // We take the edges that OpenCV calculated for us
-        //    rect.points(vertices2f);
-
-        //    // Convert them so we can use them in a fillConvexPoly
-        //    for (jdx = 0; jdx < 4; ++jdx)
-        //    {
-        //        vertices[jdx] = vertices2f[jdx];
-        //    }
-
-        //    // Now we can fill the rotated rectangle with our specified color
-        //    cv::fillConvexPoly(output_mask, vertices, 4, C);
-        //    break;
-
-        //// filled polygon
-        //case 2:
-
-        //    h = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
-        //    w = (long)std::floor(scale * rng.uniform(min_dim >> 2, min_dim));
-
-        //    s = rng.uniform(3, 9);
-        //    a = 360.0 / (double)s;
-
-        //    cv::Point center(rng.uniform(0, img_size.height), rng.uniform(0, img_size.width));
-
-        //    pts.clear();
-        //    for (jdx = 0; jdx < s; ++jdx)
-        //    {
-        //        angle = rng.uniform(jdx * a, (jdx + 1) * a);
-
-        //        if (w / std::abs(std::cos((CV_PI / 180.0) * angle)) <= h / std::abs(std::sin((CV_PI / 180.0) * angle)))
-        //        {
-        //            max_radius = (int32_t)std::abs(w / (double)std::cos((CV_PI / 180.0) * angle));
-        //        }
-        //        else
-        //        {
-        //            max_radius = (int32_t)std::abs(h / (double)std::sin((CV_PI / 180.0) * angle));
-        //        }
-
-        //        radius = rng.uniform(max_radius >> 2, max_radius);
-        //        pts.push_back(cv::Point((int32_t)(radius * std::cos((CV_PI / 180.0) * angle)), (int32_t)(radius * std::sin((CV_PI / 180.0) * angle))));
-        //    }
-
-        //    vpts[0] = pts;
-        //    cv::fillPoly(output_mask, vpts, C, cv::LineTypes::LINE_8, 0, center);
-
-        //    break;
-
-        //}   // end switch
 
     }   // end for loop
 
@@ -189,22 +93,16 @@ void generate_random_mask(cv::Mat& output_mask,
 
 
 //-----------------------------------------------------------------------------
-void generate_random_overlay(cv::Size img_size,
+void generate_random_overlay(cv::Mat random_img, //cv::Size img_size,
     cv::RNG &rng, 
-    uint32_t num_shapes, 
     cv::Mat &output_img, 
     cv::Mat &output_mask, 
+    uint32_t num_shapes, 
     double scale = 0.1)
 {
-    // define the number of shapes for generate_radnom_image
-    uint32_t N = (uint32_t)(img_size.height * img_size.width * 0.004);
-
-    // generate random image
-    cv::Mat random_img;
-    generate_random_image(random_img, rng, img_size.width, img_size.height, N, scale);
 
     // generate random mask
-    generate_random_mask(output_mask, img_size, rng, num_shapes, scale);
+    generate_random_mask(output_mask, cv::Size(random_img.cols, random_img.rows) , rng, num_shapes, scale*1.3);
 
     // multiply random_img times output_mask
     cv::multiply(random_img, output_mask, output_img);
@@ -230,27 +128,19 @@ void overlay_depthmap(cv::Mat &depth_map, cv::Mat mask, uint16_t dm_value)
     // overlay depthmap
     cv::add(depth_map, mask, depth_map);
 
-}
+}   // end of overlay_depthmap
 
 //-----------------------------------------------------------------------------
 void overlay_image(cv::Mat& input_img, cv::Mat &overlay, cv::Mat mask)
 {
-    //cv::Mat bg_mask;
 
-    //cv::cvtColor(mask, mask, cv::COLOR_BGR2GRAY);
-
-    // set bg_mask = 1 - mask
-    //cv::subtract(cv::Scalar(1, 1, 1), mask, bg_mask);
-
+    // multiply input image by 1-mask, mask should be 0 or 1, 1's should be where the overlay goes
     cv::multiply(input_img, cv::Scalar(1, 1, 1) - mask, input_img);
 
-    // multiply mask with dm_value  
-    //cv::multiply(mask, cv::Scalar(dm_value), mask);
-
-    // overlay depthmap
+    // overlay the image.  Assuming that the overlay has already been zeroed in the right spots
     cv::add(input_img, overlay, input_img);
 
-}
+}   // end of overlay_image
 
 //-----------------------------------------------------------------------------
 void new_shapes(cv::Mat &img, uint32_t img_h, uint32_t img_w, cv::RNG rng)

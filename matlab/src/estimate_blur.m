@@ -5,8 +5,9 @@ close all
 folder_path = uigetdir('../Passive Ranging', 'Select Folder with Images');
 image_ext = '*.png';
 
+addpath('C:\Users\javier.i.campos\Documents\GitHub\playground\matlab\include')
+
 if(folder_path == 0)
-    fprintf('folder path was not chosen\n')
     return;
 end
 
@@ -111,8 +112,12 @@ for idx=1:numel(listing)
     x1 = img_line(start_point-30:start_point);
     x2 = img_line(stop_point:stop_point+30);
     
+    dev_scalar = 2;
     upper_limit = mean(x1);  %% NEW upper and lower limits 
+    upper_limit_std = dev_scalar*std(x1);
     lower_limit = mean(x2);
+    lower_limit_std = dev_scalar*std(x2);
+    
     
     % update starting and stopping points based on new limits
     start_point_v2 = start_point;
@@ -128,6 +133,7 @@ for idx=1:numel(listing)
     
 %     [match, num, min_ex, max_ex] = find_match(img_line, start_point_v2, stop_point_v2, 250);
     radius = stop_point-start_point;
+    radius_v2 = stop_point_v2-start_point_v2;
     fprintf('%03d: %s, \t%02d\t%02d\n', (idx-1), listing(idx).name, radius, (stop_point_v2-start_point_v2));
     
     
@@ -150,7 +156,9 @@ for idx=1:numel(listing)
 
     figure(2)
     plot(img_line, '.-b');   
+    title({listing(idx).name,['Old radius = ', num2str(radius), ', New radius = ', num2str(radius_v2)]}, 'Interpreter', 'none')
     ylabel('Pixel Value')
+    xlim([start_point_v2-100, stop_point_v2+100])
     hold on;
     
     limits = [start_point, stop_point, start_point_v2, stop_point_v2];

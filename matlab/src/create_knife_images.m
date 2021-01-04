@@ -13,10 +13,12 @@ sigma = [0.0005,0.1725,0.3450,0.5175,0.6900,0.8625,1.0350,1.2075,1.3800,1.5525,1
 kernel_size = 60;
 mean = 3;
 
-save_dir = 'images/sample';
+save_dir = 'images/sample_v2';
 image_ext = '.png';
 % tag = create_tag(7);
 % num_imgs = 30;
+
+addpath('C:\Users\javier.i.campos\Documents\GitHub\playground\matlab\include')
 
 [status, msg, msgID] = mkdir(save_dir);
 if(status == 0)

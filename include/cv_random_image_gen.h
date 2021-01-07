@@ -80,8 +80,6 @@ inline void generate_random_shape(cv::Mat& img,
         s = rng.uniform(3, 9);
         a = 360.0 / (double)s;
 
-        cv::Point center(rng.uniform(0, nr), rng.uniform(0, nc));
-
         pts.clear();
         for (long jdx = 0; jdx < s; ++jdx)
         {
@@ -101,7 +99,7 @@ inline void generate_random_shape(cv::Mat& img,
         }
 
         vpts[0] = pts;
-        cv::fillPoly(img, vpts, color, cv::LineTypes::LINE_8, 0);
+        cv::fillPoly(img, vpts, color, cv::LineTypes::LINE_8, 0, cv::Point(x, y));
 
         break;
 

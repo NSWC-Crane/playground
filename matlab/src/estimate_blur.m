@@ -5,8 +5,6 @@ close all
 folder_path = uigetdir('../Passive Ranging', 'Select Folder with Images');
 image_ext = '*.png';
 
-addpath('C:\Users\javier.i.campos\Documents\GitHub\playground\matlab\include')
-
 if(folder_path == 0)
     return;
 end
@@ -14,8 +12,6 @@ end
 listing = dir(strcat(folder_path, '/', image_ext));
 
 %% variables
-
-show_imgs = false;
 
 max_blur_radius = 180;
 sk = create_1D_gauss_kernel(3, 2.0);
@@ -62,14 +58,6 @@ for idx=1:numel(listing)
     img_gradient_sqrt = ((img_dx.^2 + img_dy.^2).^(1/2));
     img_gradient = (img_dx.^2 + img_dy.^2);
     
-    % display image if show_img is true
-    if(show_imgs)
-        figure(1)
-        imshow(img_gradient)
-        figure(2)
-        imshow(img_gradient_sqrt)
-    end
-    
     % slice images
     grad_hc = floor(img_h/2);
     grad_wc = floor(img_w/2);
@@ -82,14 +70,6 @@ for idx=1:numel(listing)
     img_line = img(floor(img_h/2-5:img_h/2+5),:);  % a horizontal slice centered around img_h/2
     img_line = mean(img_line, 1); % mean of each column in img slice    
     img_line = img_line(width_range);
-    
-    if(show_imgs)
-        figure(3)
-        plot(grad_line); 
-        img_line = conv(grad_line, sk);
-        figure(4)
-        plot(img_line); 
-    end
     
     [grad_max, max_idx] = max(grad_line);
     [img_min, min_idx] = min(grad_line);
@@ -112,21 +92,20 @@ for idx=1:numel(listing)
     x1 = img_line(start_point-30:start_point);
     x2 = img_line(stop_point:stop_point+30);
     
-    dev_scalar = 2;
-    upper_limit = mean(x1);  %% NEW upper and lower limits 
-    upper_limit_std = dev_scalar*std(x1);
+    upper_limit = mean(x1);  
+    upper_limit_std = std(x1);
     lower_limit = mean(x2);
-    lower_limit_std = dev_scalar*std(x2);
+    lower_limit_std = std(x2);
     
     
     % update starting and stopping points based on new limits
     start_point_v2 = start_point;
-    while(upper_limit > img_line(start_point_v2))
+    while((upper_limit-upper_limit_std)> img_line(start_point_v2))
         start_point_v2 = start_point_v2 - 1;
     end 
     
     stop_point_v2 = stop_point;
-    while(lower_limit < img_line(stop_point_v2 ))
+    while((lower_limit+lower_limit_std) < img_line(stop_point_v2 ))
         stop_point_v2 = stop_point_v2  + 1;
     end 
     
@@ -169,11 +148,12 @@ for idx=1:numel(listing)
             plot([limits(i) limits(i)], [0, max(img_line)], 'm')
         end
     end
+
     
     plot(img_line(start_point)*ones(size(img_line)), 'g');
     plot(img_line(stop_point)*ones(size(img_line)), 'g');
     
-    % new computed lower and upper limits
+    % new lower and upper limits
     plot(upper_limit*ones(size(img_line)), 'c');
     plot(lower_limit*ones(size(img_line)), 'c');
     hold off;

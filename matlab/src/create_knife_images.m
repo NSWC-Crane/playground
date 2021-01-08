@@ -18,8 +18,6 @@ image_ext = '.png';
 % tag = create_tag(7);
 % num_imgs = 30;
 
-addpath('C:\Users\javier.i.campos\Documents\GitHub\playground\matlab\include')
-
 [status, msg, msgID] = mkdir(save_dir);
 if(status == 0)
     fprintf('Failed to create save directory')

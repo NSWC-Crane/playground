@@ -54,7 +54,7 @@ end
 % y = d_o =  min_range:range_step:max_range
 
 figure(plot_num)
-set(gcf,'position',([100,100,1000,800]),'color','w')
+set(gcf,'position',([100,100,800,600]),'color','w')
 surf(range/1e3, min_range:range_step:max_range, coc_map)
 
 box on

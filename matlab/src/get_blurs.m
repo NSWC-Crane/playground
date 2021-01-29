@@ -1,11 +1,12 @@
 %% matching function
 
-function [blurs] = get_blurs(folder_path)
+function [blurs, position] = get_blurs(folder_path)
 
     max_blur_radius = 180;
     image_ext = '*.png';
     listing = dir(strcat(folder_path, '\', image_ext));
     blurs = zeros(1, numel(listing));
+    position = [];
     
     sigma = 2;
     
@@ -17,6 +18,11 @@ function [blurs] = get_blurs(folder_path)
         % load image
         img_path = strcat(folder_path, '/',  listing(idx).name);
         img = imread(img_path);
+        
+        s = strsplit(listing(idx).name, '_');
+        s = char(s(3));
+        pos = str2double(s(2:end));
+        position(end+1) = pos;
 
         % image dimensions
         [img_h, img_w, img_c] = size(img);

@@ -12,15 +12,15 @@ image_ext = '*.png';
 listing = dir(strcat(folder_path, '/', '*_cm'));
 coc_map = zeros(41, numel(listing));
 
-for r=1:numel(listing)
-    folder_name = listing(r).name;
+for idx=1:numel(listing)
+    folder_name = listing(idx).name;
     
     split_str = strsplit(folder_name, '_');
     dist = str2double(split_str(1));
     distances(end+1) = dist;
     
     sub_folder = dir(strcat(folder_path, '\', folder_name, '\2020*'));
-    [coc_map(:,r), temp] = get_blurs(strcat(folder_path, '\', folder_name, '\', sub_folder(1).name));
+    [coc_map(:,idx), temp] = get_blurs(strcat(folder_path, '\', folder_name, '\', sub_folder(1).name));
     position = position + temp;
 end
 

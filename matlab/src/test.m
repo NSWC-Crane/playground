@@ -47,7 +47,7 @@ fclose(fileID);
 % plot the surface
 figure
 set(gcf,'position',([50,50,800,600]),'color','w')
-surf(coc_map)
+surf(distances, position, coc_map)
 
 box on
 set(gca,'fontweight','bold','FontSize', 13);
@@ -57,12 +57,9 @@ shading interp;
 
 % X-Axis
 xlabel('d_0 (cm)')
-set(gca,'XTick',1:1:8)
 
 % Y-Axis
 ylabel('Motor Position')
-set(gca,'YTick',0:3:42)
-% set(gca,'YTickLabel',0:100:2000)
 
 % Z-Axis
 zlabel('Blur radius (px)')

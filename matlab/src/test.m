@@ -27,10 +27,18 @@ end
 position = floor(position/7);
 
 % write data to file 
-fprintf(fileID,'%d,',distances);
+for idx=2:numel(distances)
+    fprintf(fileID,'%d,',distances(idx-1));
+end
+
+fprintf(fileID,'%d',distances(idx));
 fprintf(fileID,'\n');
 
-fprintf(fileID,'%d,',position);
+for idx=2:numel(position)
+    fprintf(fileID,'%d,',position(idx-1));
+end
+
+fprintf(fileID,'%d',position(idx));
 fprintf(fileID,'\n');
 
 [rows, cols] = size(coc_map);

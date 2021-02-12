@@ -6,11 +6,13 @@ folder_path = uigetdir('../Passive Ranging', 'Select Folder with Images');
 
 fileID = fopen('data.txt','w');
 distances = [];
-position = zeros(1, 41);
+% position = zeros(1, 101);
+position = [];
 image_ext = '*.png';
 
 listing = dir(strcat(folder_path, '/', '*_cm'));
-coc_map = zeros(41, numel(listing));
+% coc_map = zeros(101, numel(listing));
+coc_map = [];
 
 for idx=1:numel(listing)
     folder_name = listing(idx).name;
@@ -19,12 +21,13 @@ for idx=1:numel(listing)
     dist = str2double(split_str(1));
     distances(end+1) = dist;
     
-    sub_folder = dir(strcat(folder_path, '\', folder_name, '\2020*'));
-    [coc_map(:,idx), temp] = get_blurs(strcat(folder_path, '\', folder_name, '\', sub_folder(1).name));
-    position = position + temp;
+    sub_folder = dir(strcat(folder_path, '\', folder_name, '\20*'));
+%     [coc_map(:,idx), temp] = get_blurs(strcat(folder_path, '\', folder_name, '\', sub_folder(1).name));
+    [coc_map(:,end+1), position(end+1, :)] = get_blurs(strcat(folder_path, '\', folder_name, '\', sub_folder(1).name));
+%     position = position + temp;
 end
 
-position = floor(position/7);
+position = floor(sum(position)/numel(listing));
 
 % write data to file 
 for idx=2:numel(distances)

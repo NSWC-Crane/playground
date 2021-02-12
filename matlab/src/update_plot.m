@@ -21,7 +21,7 @@ hold(app.UIAxes , 'off');
 plot(app.UIAxes, app.x, app.data(fp1_value, :), 'b');
 hold(app.UIAxes , 'on');
 plot(app.UIAxes, app.x, app.data(fp2_value, :), 'g');
-stem(app.UIAxes, slice_x(logical_array), fprow_max*ones(1,nnz(logical_array)),'r *')
+stem(app.UIAxes, slice_x(logical_array), fprow_max*ones(1,nnz(logical_array)), 'Color', 'r', 'Marker', '.');
 %stem(app.UIAxes, slice_x(logical_array), fprow_max*ones(1,sum (logical_array)),'r *')
 end
 

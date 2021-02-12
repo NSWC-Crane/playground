@@ -11,9 +11,15 @@ plot_num = 1;
 
 %% input parameters
 
-%range limits (mm)
-min_range = 600;
-max_range = 1000;
+% range limits (m)
+r_min = 500;
+r_max = 1020;
+r_step = 1;
+
+% focus point limits (m)
+fp_min = 590;
+fp_max = 1020;
+fp_step = 1;
 
 % focal length (mm)
 f = 1380;
@@ -26,13 +32,11 @@ px_size = 0.00345;
 
 %% for through the ranges
 
-range_step = 1;
-
-range = (500:range_step:max_range)*1e3;
+range = (r_min:r_step:r_max)*1e3;
 
 coc_map = [];
 
-for d_o=(min_range:range_step:max_range)*1e3
+for d_o=(fp_min:fp_step:fp_max)*1e3
     
     dn = (range <= d_o);
     
@@ -50,12 +54,12 @@ end
 
 %% plot the surface
 
-% x = range
-% y = d_o =  min_range:range_step:max_range
+x = floor(range/1e3);
+y = fp_min:fp_step:fp_max;
 
 figure(plot_num)
 set(gcf,'position',([50,50,800,600]),'color','w')
-surf(range/1e3, min_range:range_step:max_range, coc_map)
+surf(x, y, coc_map)
 
 box on
 set(gca,'fontweight','bold','FontSize', 13);
@@ -64,13 +68,13 @@ colormap(parula(100));
 shading interp;
 
 % X-Axis
-xlim([range(1) range(end)]/1e3);
+xlim([x(1) x(end)]);
 %xticks(linspace(X(1), X(end), 11));
 %xticklabels([(-fs/2):1e6:fs/2]/1e6);
 xlabel('Range (m)', 'fontweight', 'bold', 'FontSize', 13);
 
 % Y-Axis
-ylim([min_range max_range]);
+ylim([y(1) y(end)]);
 %yticks(linspace(Y(1), Y(end), 11));
 %yticklabels([0:0.005:0.1]);
 %ytickformat('%1.3f')
@@ -86,4 +90,19 @@ ax = gca;
 %ax.Position = [0.07 0.175 0.92 0.23];
 
 plot_num = plot_num + 1; 
+
+%% save the x, y, and coc_map
+
+file_filter = {'*.csv','csv Files';'*.*','All Files' };
+
+[save_file, save_path] = uiputfile(file_filter, 'Enter Base File Name', startpath);
+if(save_path == 0)
+    return;
+end
+
+dlmwrite(fullfile(save_path, save_file), x, 'delimiter', ',');
+dlmwrite(fullfile(save_path, save_file), y, '-append', 'delimiter', ',');
+dlmwrite(fullfile(save_path, save_file), coc_map, '-append', 'delimiter', ',');
+
+
 

@@ -2,63 +2,42 @@ clc
 clear
 close all 
 
-folder_path = uigetdir('../Passive Ranging', 'Select Folder with Images');
-
-fileID = fopen('data.txt','w');
-distances = [];
-% position = zeros(1, 101);
-position = [];
+filename = 'data.mat';
 image_ext = '*.png';
-
-listing = dir(strcat(folder_path, '/', '*_cm'));
-% coc_map = zeros(101, numel(listing));
+range = [];
+focus = [];
+zoom = [];
 coc_map = [];
+
+folder_path = uigetdir('../Passive Ranging', 'Select Folder with Images');
+listing = dir(strcat(folder_path, '/', '*_cm'));
 
 for idx=1:numel(listing)
     folder_name = listing(idx).name;
     
     split_str = strsplit(folder_name, '_');
     dist = str2double(split_str(1));
-    distances(end+1) = dist;
+    range(end+1) = dist;
     
     sub_folder = dir(strcat(folder_path, '\', folder_name, '\20*'));
-%     [coc_map(:,idx), temp] = get_blurs(strcat(folder_path, '\', folder_name, '\', sub_folder(1).name));
-    [coc_map(:,end+1), position(end+1, :)] = get_blurs(strcat(folder_path, '\', folder_name, '\', sub_folder(1).name));
-%     position = position + temp;
+    [coc_map(:,end+1), focus(end+1, :), zoom(end+1, :)] = get_blurs(strcat(folder_path, '\', folder_name, '\', sub_folder(1).name));
 end
 
-position = floor(sum(position)/numel(listing));
+focus = floor(sum(focus)/numel(listing));
+zoom = floor(sum(zoom)/numel(listing));
 
-% write data to file 
-for idx=2:numel(distances)
-    fprintf(fileID,'%d,',distances(idx-1));
-end
+zoom(end+1) = 100;
+zoom = unique(zoom);
 
-fprintf(fileID,'%d',distances(idx));
-fprintf(fileID,'\n');
+coc_map(:, :, end+1) = coc_map;
 
-for idx=2:numel(position)
-    fprintf(fileID,'%d,',position(idx-1));
-end
-
-fprintf(fileID,'%d',position(idx));
-fprintf(fileID,'\n');
-
-[rows, cols] = size(coc_map);
-for r=1:rows
-    for c=1:(cols-1)
-        fprintf(fileID,'%d,',coc_map(r,c));
-    end
-    fprintf(fileID,'%d',coc_map(r, cols));
-    fprintf(fileID,'\n');
-end
-
-fclose(fileID);
+% save workspace variables
+save(filename, 'range', 'focus', 'zoom', 'coc_map')
 
 % plot the surface
 figure
 set(gcf,'position',([50,50,800,600]),'color','w')
-surf(distances, position, coc_map)
+surf(range, focus, coc_map(:, :, 1))
 
 box on
 set(gca,'fontweight','bold','FontSize', 13);
@@ -70,7 +49,7 @@ shading interp;
 xlabel('d_0 (cm)')
 
 % Y-Axis
-ylabel('Motor Position')
+ylabel('focus')
 
 % Z-Axis
 zlabel('Blur radius (px)')

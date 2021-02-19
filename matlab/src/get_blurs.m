@@ -1,12 +1,13 @@
 %% matching function
 
-function [blurs, position] = get_blurs(folder_path)
+function [blurs, focus, zoom] = get_blurs(folder_path)
 
     max_blur_radius = 180;
     image_ext = '*.png';
     listing = dir(strcat(folder_path, '\', image_ext));
     blurs = zeros(1, numel(listing));
-    position = [];
+    focus = [];
+    zoom = [];
     
     sigma = 2;
     
@@ -20,9 +21,14 @@ function [blurs, position] = get_blurs(folder_path)
         img = imread(img_path);
         
         s = strsplit(listing(idx).name, '_');
-        s = char(s(3));
-        pos = str2double(s(2:end));
-        position(end+1) = pos;
+        f = char(s(3));
+        pos = str2double(f(2:end));
+        focus(end+1) = pos;
+        
+        z = char(s(2));
+        zoom(end+1) = str2double(z(2:end));
+        
+        
 
         % image dimensions
         [img_h, img_w, img_c] = size(img);
@@ -100,7 +106,8 @@ function [blurs, position] = get_blurs(folder_path)
             stop_point_v2 = stop_point_v2  + 1;
         end 
         
-        radius_v2 = stop_point_v2-start_point_v2-(2*ceil(2*sigma)+1);
+        radius_v2 = stop_point_v2-start_point_v2;
+%         radius_v2 = stop_point_v2-start_point_v2-(2*ceil(2*sigma)+1);
         blurs(idx) = radius_v2;
 %         blurs(idx) = max(0, radius_v2 - 10);
         fprintf('%03d: %s, \t%02d\n', (idx-1), listing(idx).name, radius_v2);

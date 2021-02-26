@@ -20,12 +20,13 @@ function [x, y, z, data] = read_matlab_file(filename)
 
      [range, focus, zoom] = size(data);
      if range ==  x_max_index 
-         x = file_id.range ;
+         x = file_id.range ; 
+         
      else
          disp( 'range does not match with data')
      end
-     if focus == y_max_index
-          y = file_id.focus;
+     if focus == y_max_index 
+          y = file_id.focus;        
      else
          disp( 'focus does not match with data')
      end
@@ -35,13 +36,5 @@ function [x, y, z, data] = read_matlab_file(filename)
          disp( 'zoom does not match with data')
      end
      
-     
-    % close the file
-%       fclose(file_id);
-
-    % read in the data starting at row 3
-  %  data = csvread(filename, 2, 0);
-  
-
 
 end

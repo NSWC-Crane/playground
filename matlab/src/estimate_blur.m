@@ -1,6 +1,7 @@
 clc
 clear
 close all 
+pause on
 
 folder_path = uigetdir('../Passive Ranging', 'Select Folder with Images');
 image_ext = '*.png';
@@ -15,6 +16,7 @@ listing = dir(strcat(folder_path, '/', image_ext));
 
 max_blur_radius = 180;
 sk = create_1D_gauss_kernel(3, 2.0);
+kernel = create_gauss_kernel(3, 2.0);
 offset = 0.25;
 delta = 0.95;
 
@@ -39,7 +41,8 @@ for idx=1:numel(listing)
     end
     
     % apply a guassian filter
-    img = imgaussfilt(img, 2);
+%     img = imgaussfilt(img, 2);
+    img = conv2(img, kernel, 'valid');
     
     % define kernels for dx and dy partial derivatives
     kernel_3dx = .5.*[0, 0, 0; 
@@ -65,17 +68,19 @@ for idx=1:numel(listing)
     
     grad_line = img_gradient(grad_hc-5:grad_hc+5, :); % horizontal slice
     grad_line = mean(grad_line, 1);
+%     grad_line = conv(grad_line, sk, 'same');
     grad_line = grad_line(width_range);
     
-    img_line = img(floor(img_h/2-5:img_h/2+5),:);  % a horizontal slice centered around img_h/2
-    img_line = mean(img_line, 1); % mean of each column in img slice    
+    img_slice = img(floor(img_h/2-5:img_h/2+5),:);  % a horizontal slice centered around img_h/2
+    img_line = mean(img_slice, 1); % mean of each column in img slice    
+%     img_line = conv(img_line, sk, 'same');
     img_line = img_line(width_range);
     
     [grad_max, max_idx] = max(grad_line);
     [img_min, min_idx] = min(grad_line);
     
     % estimate starting and stopping points    
-    threshold = grad_max*(1-0.97);
+    threshold = grad_max*(1-0.95);
     
     start_point = max_idx;
     while(grad_line(start_point) > threshold)
@@ -89,14 +94,13 @@ for idx=1:numel(listing)
     
     
     % approx the upper and lower limits 
-    x1 = img_line(start_point-30:start_point);
-    x2 = img_line(stop_point:stop_point+30);
+    x1 = img_line(start_point-20:start_point);
+    x2 = img_line(stop_point:stop_point+20);
     
     upper_limit = mean(x1);  
     upper_limit_std = std(x1);
     lower_limit = mean(x2);
     lower_limit_std = std(x2);
-    
     
     % update starting and stopping points based on new limits
     start_point_v2 = start_point;
@@ -109,54 +113,45 @@ for idx=1:numel(listing)
         stop_point_v2 = stop_point_v2  + 1;
     end 
     
-    
 %     [match, num, min_ex, max_ex] = find_match(img_line, start_point_v2, stop_point_v2, 250);
     radius = stop_point-start_point;
     radius_v2 = stop_point_v2-start_point_v2;
     fprintf('%03d: %s, \t%02d\t%02d\n', (idx-1), listing(idx).name, radius, (stop_point_v2-start_point_v2));
     
-    
-    %https://stackoverflow.com/questions/28389997/plot-vertical-lines-at-a-certain-time
     figure(1);  
     plot(grad_line, '.-b') 
     ylabel('Magnitude')
-    hold on;
     
-    limits = [start_point stop_point, start_point_v2, stop_point_v2];
-    for i=1:numel(limits)
-        if(i<3)
-            plot([limits(i) limits(i)], [0, max(grad_line)], 'r')
-        else
-            plot([limits(i) limits(i)], [0, max(grad_line)], 'm')
-        end
-    end
+    hold on;
+    stem([start_point stop_point], [1 1]*max(grad_line), 'Color', 'r', 'Marker', '.')
+    stem([start_point_v2 stop_point_v2], [1 1]*max(grad_line), 'Color', 'g', 'Marker', '.')
     hold off;
-
 
     figure(2)
     plot(img_line, '.-b');   
-    title({listing(idx).name,['Old radius = ', num2str(radius), ', New radius = ', num2str(radius_v2)]}, 'Interpreter', 'none')
+    title({listing(idx).name,['Old count = ', num2str(radius), ', New count = ', num2str(radius_v2)]}, 'Interpreter', 'none')
     ylabel('Pixel Value')
-    xlim([start_point_v2-100, stop_point_v2+100])
+    
     hold on;
+    stem([start_point stop_point], [1 1]*max(img_line), 'Color', 'r', 'Marker', '.');
+    stem([start_point_v2 stop_point_v2], [1 1]*max(img_line), 'Color', 'g', 'Marker', '.');
     
-    limits = [start_point, stop_point, start_point_v2, stop_point_v2];
-    for i=1:numel(limits)
-        if(i<3)
-            plot([limits(i) limits(i)], [0, max(img_line)], 'r')
-        else
-            plot([limits(i) limits(i)], [0, max(img_line)], 'm')
-        end
-    end
-
+    plot(img_line(start_point)*ones(size(img_line)), '--r');
+    plot(img_line(stop_point)*ones(size(img_line)), '--r');
     
-    plot(img_line(start_point)*ones(size(img_line)), 'g');
-    plot(img_line(stop_point)*ones(size(img_line)), 'g');
-    
-    % new lower and upper limits
-    plot(upper_limit*ones(size(img_line)), 'c');
-    plot(lower_limit*ones(size(img_line)), 'c');
+    plot(upper_limit*ones(size(img_line)), '--g');
+    plot(lower_limit*ones(size(img_line)), '--g');
     hold off;
+    
+    l1 = sprintf('%i - %i', start_point, stop_point);
+    l2 = sprintf('%i - %i', start_point_v2, stop_point_v2);
+    legend({'pixel curve', l1, l2}, 'FontSize', 12);
+    
+    figure(3)
+    mesh(img(:, width_range))
+    view(10, 10);
+    
+    pause(0.25)
     
 end
 

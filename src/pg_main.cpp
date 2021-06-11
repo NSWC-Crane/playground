@@ -151,6 +151,19 @@ int main(int argc, char** argv)
     param_stream << num_images << std::endl;
     param_stream.close();
 
+    // print out the parameters
+    std::cout << "------------------------------------------------------------------" << std::endl;
+    std::cout << "Parameters used to generate the dataset" << std::endl;
+    std::cout << "Depthmap Values: " << depthmap_values << std::endl;
+    std::cout << "Sigma Table:     " << sigma_table << std::endl;
+    std::cout << "Blur Radius 1:   " << br1_table << std::endl;
+    std::cout << "Blur Radius 2:   " << br2_table << std::endl;
+    std::cout << "Dataset Type:    " << static_cast<uint32_t>(dataset_type) << std::endl;
+    std::cout << "DM Values/Image: " << max_dm_num << std::endl;
+    std::cout << "# of Objects:    " << num_objects << std::endl;
+    std::cout << "# of Images:     " << num_images << std::endl;
+    std::cout << "------------------------------------------------------------------" << std::endl << std::endl;
+
     // setup the windows to display the results
     cv::namedWindow(window_name, cv::WINDOW_NORMAL);
     cv::resizeWindow(window_name, 2*img_w, img_h);
@@ -185,7 +198,7 @@ int main(int argc, char** argv)
         DataLog_Stream << std::endl;
         DataLog_Stream << "# focus point 1 filename, focus point 2 filename, depthmap filename" << std::endl;
         
-        std::cout << save_location << std::endl;
+        std::cout << "Data Directory: " << save_location << std::endl;
 
         for (uint32_t i = 0; i<num_images; ++i)
         {

@@ -43,6 +43,12 @@
 #include <num2string.h>
 #include <file_ops.h>
 
+#if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
+
+#else
+typedef void* HINSTANCE;
+#endif
+
 // ----------------------------------------------------------------------------------------
 inline std::ostream& operator<<(std::ostream& out, std::vector<uint8_t>& item)
 {
@@ -103,8 +109,8 @@ int main(int argc, char** argv)
 
     uint32_t octaves = 7;
     double sn_scale = 0.020;
-    double sn_slope; 
-    double sn_int;
+    double sn_slope = 1.0; 
+    double sn_int = 0.01;
     double persistence = 0.70;
     //std::vector<cv::Vec3b> wood = { cv::Vec3b(41,44,35), cv::Vec3b(57,91,61), cv::Vec3b(80,114,113), cv::Vec3b(64,126,132) };
     std::vector<uint8_t> wood = { 41,44,35, 57,91,61, 80,114,113, 64,126,132 };
@@ -177,6 +183,8 @@ int main(int argc, char** argv)
         {
             lib_filename = "D:/Projects/simplex_noise/build/Release/sn_lib.dll";
 
+#if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
+
             simplex_noise_lib = LoadLibrary(lib_filename.c_str());
 
             if (simplex_noise_lib == NULL)
@@ -188,6 +196,19 @@ int main(int argc, char** argv)
             evaluate = (evaluate_)GetProcAddress(simplex_noise_lib, "evaluate");
             octave_evaluate = (octave_evaluate_)GetProcAddress(simplex_noise_lib, "octave_evaluate");
             create_color_map = (create_color_map_)GetProcAddress(simplex_noise_lib, "create_color_map");
+#else
+            simplex_noise_lib = dlopen(lib_filename.c_str(), RTLD_NOW);
+
+            if (simplex_noise_lib == NULL)
+            {
+                throw std::runtime_error("error loading library");
+            }
+
+            init = (init_)dlsym(simplex_noise_lib, "init");
+            evaluate = (evaluate_)dlsym(simplex_noise_lib, "evaluate");
+            octave_evaluate = (octave_evaluate_)dlsym(simplex_noise_lib, "octave_evaluate");
+            create_color_map = (create_color_map_)dlsym(simplex_noise_lib, "create_color_map");
+#endif
 
             init((long)time(NULL));
             sn_int = 0.01;

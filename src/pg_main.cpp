@@ -318,7 +318,11 @@ int main(int argc, char** argv)
 
     if (dataset_type == 1)
     {
+#if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
         FreeLibrary(simplex_noise_lib);
+#else
+        dlclose(simplex_noise_lib);
+#endif
     }
 
 

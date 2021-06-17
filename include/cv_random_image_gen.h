@@ -22,7 +22,7 @@ inline void generate_random_shape(cv::Mat& img,
     double a, angle;
     int32_t radius, max_radius;
 
-    long min_dim = std::min(nr, nc);
+    int32_t min_dim = std::min(nr, nc);
 
     // generate the random point
     x = rng.uniform(0, nc);

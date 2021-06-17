@@ -2,14 +2,12 @@
 
 #if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
 #include <windows.h>
-//#include "win_network_fcns.h"
-//#include <winsock2.h>
-//#include <iphlpapi.h>
-//
-//#pragma comment(lib, "IPHLPAPI.lib")    // Link with Iphlpapi.lib
+
+#else
+#include <dlfcn.h>
+typedef void* HINSTANCE;
 
 #endif
-
 
 // C/C++ includes
 #include <cmath>
@@ -43,11 +41,6 @@
 #include <num2string.h>
 #include <file_ops.h>
 
-#if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
-
-#else
-typedef void* HINSTANCE;
-#endif
 
 // ----------------------------------------------------------------------------------------
 inline std::ostream& operator<<(std::ostream& out, std::vector<uint8_t>& item)

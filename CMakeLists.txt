@@ -63,7 +63,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 #include(${COMMON_ROOT}/cmake_utils/use_cpp_11.cmake)
-#include(${COMMON_ROOT}/cmake_utils/use_sse_avx.cmake)
+include(${COMMON_ROOT}/cmake_utils/use_sse_avx.cmake)
 
 # look for any *.c and *.cpp files
 file(GLOB SOURCES "src/*.c*"

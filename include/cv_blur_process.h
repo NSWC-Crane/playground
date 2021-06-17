@@ -59,6 +59,20 @@ void generate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_
     dm_values = std::vector<uint16_t>(set_values.begin(), set_values.end());
 }
 
+//-----------------------------------------------------------------------------
+void generate_depthmap_index_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_t max_dm_num,
+    const std::vector<uint8_t> depthmap_values, std::vector<uint16_t>& dm_values, cv::RNG rng)
+{
+    std::set<uint16_t, std::greater<uint16_t>> set_values;
+
+    for (uint32_t idx = 0; idx < max_dm_num; idx++)
+    {
+        uint16_t random_idx = rng.uniform(0, (int32_t)depthmap_values.size());
+        set_values.insert(random_idx);
+    }
+
+    dm_values = std::vector<uint16_t>(set_values.begin(), set_values.end());
+}
 
 //-----------------------------------------------------------------------------
 void generate_random_mask(cv::Mat& output_mask,

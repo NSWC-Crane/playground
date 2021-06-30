@@ -69,8 +69,8 @@ inline std::ostream& operator<<(std::ostream& out, std::vector<T>& item)
 int main(int argc, char** argv)
 {
     uint32_t idx = 0, jdx = 0;
-    uint32_t img_h = 480;
-    uint32_t img_w = 480;
+    uint32_t img_h = 512;
+    uint32_t img_w = 512;
     cv::Size img_size(img_h, img_w);
 
     cv::RNG rng(time(NULL));
@@ -149,8 +149,10 @@ int main(int argc, char** argv)
     param_stream << static_cast<uint32_t>(dataset_type) << std::endl;
     param_stream << max_dm_num << std::endl;
     param_stream << num_objects << std::endl;
-    param_stream << num_images << std::endl;
-    param_stream.close();
+    param_stream << num_images << std::endl << std::endl;
+    param_stream << "------------------------------------------------------------------" << std::endl;
+
+    //param_stream.close();
 
     // print out the parameters
     std::cout << "------------------------------------------------------------------" << std::endl;
@@ -254,8 +256,11 @@ int main(int argc, char** argv)
                 f2_layer = img_f2.clone();
 
                 //min_N = (int32_t)ceil((num_objects) / (1 + exp(-0.35 * dm_values[idx] + (0.035 * num_objects))) + 2);
-                min_N = (int32_t)(num_objects / (double)(1.0 + exp(-0.1 * (depthmap_values[dm_indexes[idx]] - (max_dm_value-min_dm_value)/2.0))) + 5);
-                max_N = (int32_t)ceil(1.25 * min_N);
+                //min_N = (int32_t)(num_objects / (double)(1.0 + exp(-0.1 * (depthmap_values[dm_indexes[idx]] - (max_dm_value-min_dm_value)/2.0))) + 5);
+                //max_N = (int32_t)ceil(1.25 * min_N);
+                min_N = (int32_t)ceil(((max_dm_value) / (double)(1.0 + exp(-0.35 * depthmap_values[dm_indexes[idx]] + (0.175 * max_dm_value)))) + 3);
+                max_N = (int32_t)ceil(1.1 * min_N);
+
                 N = rng.uniform(min_N, max_N + 1);
 
                 // define the scale factor
@@ -305,8 +310,11 @@ int main(int argc, char** argv)
 
             std::cout << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
             std::cout << dm_indexes << std::endl;
+            param_stream << "image " << num2str<int>(jdx, "%03d: ") << dm_indexes << std::endl;
             DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
         } // end of for loop
+
+        param_stream.close();
 
         DataLog_Stream.close();
     }

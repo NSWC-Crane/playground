@@ -81,7 +81,7 @@ int main(int argc, char** argv)
     cv::Mat f1_layer, f2_layer;
     cv::Mat random_img;
     cv::Mat montage;
-    //std::vector<uint16_t> dm_values;
+    std::vector<uint16_t> dm_values;
     std::vector<uint16_t> dm_indexes;
     int32_t min_N, max_N;
     uint32_t N;
@@ -89,10 +89,20 @@ int main(int argc, char** argv)
     uint32_t BN = 1000;
     std::string window_name = "montage";
 
+    uint8_t bg_dm_value;
+    uint8_t fg_dm_value;
+    std::vector<std::pair<uint8_t, uint8_t>> bg_br_table;
+    std::vector<std::pair<uint8_t, uint8_t>> fg_br_table;
+    double prob_bg = 0.31;    // set the probablility of selecting the background depthmap value
+    double prob_fg = 0.35;    // set the probability of selecting the foreground depthmap value
+    double bg_x = 0, fg_x = 0;
+    //double sigma_1 = 0.0, sigma_2 = 0.0;
+    //uint8_t dm_value;
+
     std::vector<uint8_t> depthmap_values;
     std::vector<double> sigma_table;
-    std::vector<uint8_t> br1_table;
-    std::vector<uint8_t> br2_table;
+    std::vector<uint8_t> br1_table, tmp_br1_table;
+    std::vector<uint8_t> br2_table, tmp_br2_table;
     uint8_t dataset_type;
     uint32_t max_dm_num;
     uint32_t num_objects;
@@ -129,11 +139,11 @@ int main(int argc, char** argv)
     }
 
     std::string param_filename = argv[1];
-    read_blur_params(param_filename, depthmap_values, sigma_table, br1_table, br2_table,
-        dataset_type, max_dm_num, num_objects, num_images, save_location);
+    read_blur_params(param_filename, bg_dm_value, fg_dm_value, bg_br_table, fg_br_table, depthmap_values, sigma_table,
+        br1_table, br2_table, dataset_type, max_dm_num, num_objects, num_images, save_location);
 
-    uint16_t min_dm_value = depthmap_values.front();
-    uint16_t max_dm_value = depthmap_values.back();
+    uint16_t min_dm_value = fg_dm_value;        // depthmap_values.front();
+    uint16_t max_dm_value = bg_dm_value;        // depthmap_values.back();
 
     // create results directories if they do not exist
     mkdir(save_location + "images");
@@ -220,9 +230,29 @@ int main(int argc, char** argv)
 
         for (jdx = 0; jdx < num_images; ++jdx)
         {
-            // generate dm_values
-            //generate_depthmap_set(min_dm_value, max_dm_value, max_dm_num, depthmap_values, dm_values, rng);
-            generate_depthmap_index_set(min_dm_value, max_dm_value, max_dm_num, depthmap_values, dm_indexes, rng);
+            // clear out the temp blur radius tables
+            tmp_br1_table.clear();
+            tmp_br2_table.clear();
+
+            dm_values.clear();
+
+            // generate random dm_values that include the foreground and background values
+            uint32_t tmp_dm_num = max_dm_num;
+
+            // get the probablility that the background depthmap value will be used
+            bg_x = rng.uniform(0.0, 1.0);
+
+            // get the probability that the foreground depthmap value will be used
+            fg_x = rng.uniform(0.0, 1.0);
+
+            if (bg_x <= prob_bg)
+                tmp_dm_num--;
+
+            if (fg_x <= prob_fg)
+                tmp_dm_num--;
+
+            //generate_depthmap_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_values, rng);
+            generate_depthmap_index_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_indexes, rng);
 
             N = (uint32_t)(img_h * img_w * 0.005);
             if (dataset_type == 0)
@@ -239,27 +269,59 @@ int main(int argc, char** argv)
             // clone the images
             img_f2 = img_f1.clone();
 
+            // check the background probability and fill in the tables
+            if (bg_x <= prob_bg)
+            {
+                uint16_t dm = rng.uniform(0, bg_br_table.size());
+                tmp_br1_table.push_back(bg_br_table[dm].first);
+                tmp_br2_table.push_back(bg_br_table[dm].second);
+                //sigma_1 = sigma_table[bg_br_table[dm].first];
+                //sigma_2 = sigma_table[bg_br_table[dm].second];
+                dm_values.push_back(bg_dm_value);
+                //dm_values.insert(dm_values.begin(), )
+            }
+
+            // fill in the tables for the region of interest depthmap values
+            for (idx = 0; idx < dm_indexes.size(); ++idx)
+            {
+                tmp_br1_table.push_back(br1_table[dm_indexes[idx]]);
+                tmp_br2_table.push_back(br2_table[dm_indexes[idx]]);
+                dm_values.push_back(depthmap_values[dm_indexes[idx]]);
+            }
+
+            // check the foreground probability and fill in the tables
+            if (fg_x <= prob_fg)
+            {
+                uint16_t dm = rng.uniform(0, bg_br_table.size());
+                tmp_br1_table.push_back(fg_br_table[dm].first);
+                tmp_br2_table.push_back(fg_br_table[dm].second);
+                //sigma_1 = sigma_table[bg_br_table[dm].first];
+                //sigma_2 = sigma_table[bg_br_table[dm].second];
+                dm_values.push_back(fg_dm_value);
+                //dm_values.insert(dm_values.begin(), )
+            }
+
             // create gaussian kernel and blur imgs
-            create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_indexes[0]]], kernel);
+            create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[0]], kernel);
             cv::filter2D(img_f1, img_f1, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-            create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_indexes[0]]], kernel);
+            create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[0]], kernel);
             cv::filter2D(img_f2, img_f2, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-            // create depth map
-            cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(depthmap_values[dm_indexes[0]]));
+            // create the initial depth map
+            cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
 
             // blur imgs using dm_values and random masks
-            for (idx = 1; idx < dm_indexes.size(); ++idx)
+            for (idx = 1; idx < dm_values.size(); ++idx)
             {
                 f1_layer = img_f1.clone();
                 f2_layer = img_f2.clone();
 
                 //min_N = (int32_t)ceil((num_objects) / (1 + exp(-0.35 * dm_values[idx] + (0.035 * num_objects))) + 2);
                 //min_N = (int32_t)(num_objects / (double)(1.0 + exp(-0.1 * (depthmap_values[dm_indexes[idx]] - (max_dm_value-min_dm_value)/2.0))) + 5);
-                //max_N = (int32_t)ceil(1.25 * min_N);
-                min_N = (int32_t)ceil(((max_dm_value) / (double)(1.0 + exp(-0.35 * depthmap_values[dm_indexes[idx]] + (0.175 * max_dm_value)))) + 3);
-                max_N = (int32_t)ceil(1.1 * min_N);
+                //min_N = (int32_t)ceil(((max_dm_value) / (double)(1.0 + exp(-0.35 * depthmap_values[dm_values[idx]] + (0.175 * max_dm_value)))) + 3);
+                min_N = (int32_t)ceil(((max_dm_value) / (double)(1.0 + exp(-0.365 * dm_values[idx] + (0.175 * max_dm_value)))) + 3);
+                max_N = (int32_t)ceil(2.0* min_N);  // 2.0
 
                 N = rng.uniform(min_N, max_N + 1);
 
@@ -285,32 +347,35 @@ int main(int argc, char** argv)
                 overlay_image(f2_layer, output_img, mask);
 
                 // overlay depthmap
-                overlay_depthmap(depth_map, mask, depthmap_values[dm_indexes[idx]]);
+                //overlay_depthmap(depth_map, mask, depthmap_values[dm_indexes[idx]]);
+                overlay_depthmap(depth_map, mask, dm_values[idx]);
 
-                // blur f1
-                create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_indexes[idx]]], kernel);
-                blur_layer(f1_layer, img_f1, mask, kernel, rng);
+                //// blur f1
+                ////create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_indexes[idx]]], kernel);
+                //create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[idx]], kernel);
+                //blur_layer(f1_layer, img_f1, mask, kernel, rng);
 
-                // blur f2
-                create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_indexes[idx]]], kernel);
-                blur_layer(f2_layer, img_f2, mask, kernel, rng);
+                //// blur f2
+                ////create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_indexes[idx]]], kernel);
+                //create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[idx]], kernel);
+                //blur_layer(f2_layer, img_f2, mask, kernel, rng);
             }
 
-            cv::hconcat(img_f1, img_f2, montage);
-            cv::imshow(window_name, montage);
-            cv::waitKey(10);
+            //cv::hconcat(img_f1, img_f2, montage);
+            //cv::imshow(window_name, montage);
+            //cv::waitKey(10);
 
             std::string f1_filename = num2str<int>(jdx, "images/image_f1_%04i.png");
             std::string f2_filename = num2str<int>(jdx, "images/image_f2_%04i.png");
             std::string dmap_filename = num2str<int>(jdx, "depth_maps/dm_%04i.png");
 
-            cv::imwrite(save_location + f1_filename, img_f1);
-            cv::imwrite(save_location + f2_filename, img_f2);
+            //cv::imwrite(save_location + f1_filename, img_f1);
+            //cv::imwrite(save_location + f2_filename, img_f2);
             cv::imwrite(save_location + dmap_filename, depth_map);
 
             std::cout << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
-            std::cout << dm_indexes << std::endl;
-            param_stream << "image " << num2str<int>(jdx, "%03d: ") << dm_indexes << std::endl;
+            std::cout << dm_values << std::endl;
+            param_stream << "image " << num2str<int>(jdx, "%03d: ") << dm_values << std::endl;
             DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
         } // end of for loop
 

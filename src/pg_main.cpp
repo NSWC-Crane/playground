@@ -350,15 +350,15 @@ int main(int argc, char** argv)
                 //overlay_depthmap(depth_map, mask, depthmap_values[dm_indexes[idx]]);
                 overlay_depthmap(depth_map, mask, dm_values[idx]);
 
-                //// blur f1
-                ////create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_indexes[idx]]], kernel);
-                //create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[idx]], kernel);
-                //blur_layer(f1_layer, img_f1, mask, kernel, rng);
+                // blur f1
+                //create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_indexes[idx]]], kernel);
+                create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[idx]], kernel);
+                blur_layer(f1_layer, img_f1, mask, kernel, rng);
 
-                //// blur f2
-                ////create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_indexes[idx]]], kernel);
-                //create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[idx]], kernel);
-                //blur_layer(f2_layer, img_f2, mask, kernel, rng);
+                // blur f2
+                //create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_indexes[idx]]], kernel);
+                create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[idx]], kernel);
+                blur_layer(f2_layer, img_f2, mask, kernel, rng);
             }
 
             //cv::hconcat(img_f1, img_f2, montage);
@@ -369,13 +369,15 @@ int main(int argc, char** argv)
             std::string f2_filename = num2str<int>(jdx, "images/image_f2_%04i.png");
             std::string dmap_filename = num2str<int>(jdx, "depth_maps/dm_%04i.png");
 
-            //cv::imwrite(save_location + f1_filename, img_f1);
-            //cv::imwrite(save_location + f2_filename, img_f2);
+            cv::imwrite(save_location + f1_filename, img_f1);
+            cv::imwrite(save_location + f2_filename, img_f2);
             cv::imwrite(save_location + dmap_filename, depth_map);
 
             std::cout << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
             std::cout << dm_values << std::endl;
             param_stream << "image " << num2str<int>(jdx, "%03d: ") << dm_values << std::endl;
+            param_stream << "           " << tmp_br1_table << std::endl;
+            param_stream << "           " << tmp_br2_table << std::endl;
             DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
         } // end of for loop
 

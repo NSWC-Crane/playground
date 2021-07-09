@@ -45,12 +45,12 @@ inline void blur_layer(cv::Mat& input_img,
 
 
 //-----------------------------------------------------------------------------
-void generate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_t max_dm_num, 
+void generate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, int32_t max_dm_num, 
     const std::vector<uint8_t> depthmap_values, std::vector<uint16_t> &dm_values, cv::RNG rng)
 {
     std::set<uint16_t, std::greater<uint16_t>> set_values;
 
-    for (uint32_t idx = 0; idx<max_dm_num; idx++)
+    for (int32_t idx = 0; idx<max_dm_num; idx++)
     {
         uint16_t random_idx = rng.uniform(0, (int32_t)depthmap_values.size());
         set_values.insert(depthmap_values.at(random_idx));
@@ -60,12 +60,12 @@ void generate_depthmap_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_
 }
 
 //-----------------------------------------------------------------------------
-void generate_depthmap_index_set(uint16_t min_dm_value, uint16_t max_dm_value, uint32_t max_dm_num,
+void generate_depthmap_index_set(uint16_t min_dm_value, uint16_t max_dm_value, int32_t max_dm_num,
     const std::vector<uint8_t> depthmap_values, std::vector<uint16_t>& dm_values, cv::RNG rng)
 {
     std::set<uint16_t, std::greater<uint16_t>> set_values;
 
-    for (uint32_t idx = 0; idx < max_dm_num; idx++)
+    for (int32_t idx = 0; idx < max_dm_num; idx++)
     {
         uint16_t random_idx = rng.uniform(0, (int32_t)depthmap_values.size());
         set_values.insert(random_idx);

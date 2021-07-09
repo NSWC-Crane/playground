@@ -89,8 +89,10 @@ int main(int argc, char** argv)
     uint32_t BN = 1000;
     std::string window_name = "montage";
 
-    uint8_t bg_dm_value;
-    uint8_t fg_dm_value;
+    //uint8_t bg_dm_value;
+    //uint8_t fg_dm_value;
+    std::pair<uint8_t, double> bg_dm;
+    std::pair<uint8_t, double> fg_dm;
     std::vector<std::pair<uint8_t, uint8_t>> bg_br_table;
     std::vector<std::pair<uint8_t, uint8_t>> fg_br_table;
     double prob_bg = 0.31;    // set the probablility of selecting the background depthmap value
@@ -104,7 +106,7 @@ int main(int argc, char** argv)
     std::vector<uint8_t> br1_table, tmp_br1_table;
     std::vector<uint8_t> br2_table, tmp_br2_table;
     uint8_t dataset_type;
-    uint32_t max_dm_num;
+    int32_t max_dm_num;
     uint32_t num_objects;
     uint32_t num_images;
     std::string save_location;
@@ -139,11 +141,13 @@ int main(int argc, char** argv)
     }
 
     std::string param_filename = argv[1];
-    read_blur_params(param_filename, bg_dm_value, fg_dm_value, bg_br_table, fg_br_table, depthmap_values, sigma_table,
+    read_blur_params(param_filename, bg_dm, fg_dm, bg_br_table, fg_br_table, depthmap_values, sigma_table,
         br1_table, br2_table, dataset_type, max_dm_num, num_objects, num_images, save_location);
 
-    uint16_t min_dm_value = fg_dm_value;        // depthmap_values.front();
-    uint16_t max_dm_value = bg_dm_value;        // depthmap_values.back();
+    uint16_t min_dm_value = fg_dm.first;        // depthmap_values.front();
+    uint16_t max_dm_value = bg_dm.first;        // depthmap_values.back();
+    prob_bg = bg_dm.second;                     // set the probablility of selecting the background depthmap value
+    prob_fg = fg_dm.second;                     // set the probability of selecting the foreground depthmap value
 
     // create results directories if they do not exist
     mkdir(save_location + "images");
@@ -237,7 +241,7 @@ int main(int argc, char** argv)
             dm_values.clear();
 
             // generate random dm_values that include the foreground and background values
-            uint32_t tmp_dm_num = max_dm_num;
+            int32_t tmp_dm_num = max_dm_num;
 
             // get the probablility that the background depthmap value will be used
             bg_x = rng.uniform(0.0, 1.0);
@@ -255,15 +259,22 @@ int main(int argc, char** argv)
             generate_depthmap_index_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_indexes, rng);
 
             N = (uint32_t)(img_h * img_w * 0.005);
-            if (dataset_type == 0)
+            switch (dataset_type)
             {
+            case 0:
                 generate_random_image(img_f1, rng, img_h, img_w, BN, 0.1);
-            }
-            else
-            {
+                break;
+
+            case 1:
                 img_f1 = cv::Mat(img_h, img_w, CV_8UC3);
                 sn_scale = sn_slope * dm_indexes[0] + sn_int;
                 create_color_map(img_h, img_w, sn_scale, octaves, persistence, wood.data(), img_f1.data);
+                break;
+
+            case 2:
+                //img_f1 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0,0,0));
+                cv::hconcat(cv::Mat(img_h, img_w >> 1, CV_8UC3, cv::Scalar::all(0)), cv::Mat(img_h, img_w - (img_w >> 1), CV_8UC3, cv::Scalar::all(255)), img_f1);
+                break;
             }
 
             // clone the images
@@ -277,7 +288,7 @@ int main(int argc, char** argv)
                 tmp_br2_table.push_back(bg_br_table[dm].second);
                 //sigma_1 = sigma_table[bg_br_table[dm].first];
                 //sigma_2 = sigma_table[bg_br_table[dm].second];
-                dm_values.push_back(bg_dm_value);
+                dm_values.push_back(bg_dm.first);
                 //dm_values.insert(dm_values.begin(), )
             }
 
@@ -297,7 +308,7 @@ int main(int argc, char** argv)
                 tmp_br2_table.push_back(fg_br_table[dm].second);
                 //sigma_1 = sigma_table[bg_br_table[dm].first];
                 //sigma_2 = sigma_table[bg_br_table[dm].second];
-                dm_values.push_back(fg_dm_value);
+                dm_values.push_back(fg_dm.first);
                 //dm_values.insert(dm_values.begin(), )
             }
 
@@ -317,6 +328,7 @@ int main(int argc, char** argv)
                 f1_layer = img_f1.clone();
                 f2_layer = img_f2.clone();
 
+                // This part help shape the final distribution of depthmap values
                 //min_N = (int32_t)ceil((num_objects) / (1 + exp(-0.35 * dm_values[idx] + (0.035 * num_objects))) + 2);
                 //min_N = (int32_t)(num_objects / (double)(1.0 + exp(-0.1 * (depthmap_values[dm_indexes[idx]] - (max_dm_value-min_dm_value)/2.0))) + 5);
                 //min_N = (int32_t)ceil(((max_dm_value) / (double)(1.0 + exp(-0.35 * depthmap_values[dm_values[idx]] + (0.175 * max_dm_value)))) + 3);
@@ -329,15 +341,21 @@ int main(int argc, char** argv)
                 scale = 60.0 / (double)img_size.width;
 
                 // 
-                if (dataset_type == 0)
+                switch (dataset_type)
                 {
+                case 0:
                     generate_random_image(random_img, rng, img_h, img_w, BN, 0.1);
-                }
-                else
-                {
+                    break;
+                    
+                case 1:
                     sn_scale = sn_slope * dm_indexes[idx] + sn_int;
                     random_img = cv::Mat(img_h, img_w, CV_8UC3);
                     create_color_map(img_h, img_w, sn_scale, octaves, persistence, wood.data(), random_img.data);
+                    break;
+
+                case 2:
+                    cv::hconcat(cv::Mat(img_h, img_w >> 1, CV_8UC3, cv::Scalar::all(0)), cv::Mat(img_h, img_w - (img_w >> 1), CV_8UC3, cv::Scalar::all(255)), random_img);
+                    break;
                 }
 
                 // generate random overlay

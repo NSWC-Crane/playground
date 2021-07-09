@@ -31,8 +31,10 @@ const uint32_t kernel_size = 69;
 #include <file_parser.h>
 
 void read_blur_params(std::string param_filename, 
-    uint8_t &bg_dm_value,
-    uint8_t &fg_dm_value,
+    //uint8_t &bg_dm_value,
+    //uint8_t &fg_dm_value,
+    std::pair<uint8_t, double>& bg_dm,
+    std::pair<uint8_t, double>& fg_dm,
     std::vector<std::pair<uint8_t, uint8_t>> &bg_br_table,
     std::vector<std::pair<uint8_t, uint8_t>> &fg_br_table,
     std::vector<uint8_t> &depthmap_values, 
@@ -40,7 +42,7 @@ void read_blur_params(std::string param_filename,
     std::vector<uint8_t> &br1_table, 
     std::vector<uint8_t> &br2_table,
     uint8_t &dataset_type,
-    uint32_t &max_dm_num,
+    int32_t &max_dm_num,
     uint32_t &num_objects,
     uint32_t &num_images,
     std::string &save_location
@@ -59,8 +61,9 @@ void read_blur_params(std::string param_filename,
             // #0 background blur radius values, br1,br2, br1,br2,... 
             case 0:
                 try {
-                    bg_dm_value = (uint8_t)std::stoi(params[idx][0]);
-                    for (jdx = 1; jdx < params[idx].size(); jdx += 2)
+                    //bg_dm_value = (uint8_t)std::stoi(params[idx][0]);
+                    bg_dm = std::make_pair((uint8_t)std::stoi(params[idx][0]), std::stod(params[idx][1]));
+                    for (jdx = 2; jdx < params[idx].size(); jdx += 2)
                     {
                         bg_br_table.push_back(std::make_pair((uint8_t)std::stoi(params[idx][jdx]), (uint8_t)std::stoi(params[idx][jdx + 1])));
                     }
@@ -73,8 +76,9 @@ void read_blur_params(std::string param_filename,
             // #1 foreground blur radius values, br1,br2, br1,br2,...  
             case 1:
                 try {
-                    fg_dm_value = (uint8_t)std::stoi(params[idx][0]);
-                    for (jdx = 1; jdx < params[idx].size(); jdx += 2)
+                    //fg_dm_value = (uint8_t)std::stoi(params[idx][0]);
+                    fg_dm = std::make_pair((uint8_t)std::stoi(params[idx][0]), std::stod(params[idx][1]));
+                    for (jdx = 2; jdx < params[idx].size(); jdx += 2)
                     {
                         fg_br_table.push_back(std::make_pair((uint8_t)std::stoi(params[idx][jdx]), (uint8_t)std::stoi(params[idx][jdx + 1])));
                     }
@@ -118,7 +122,7 @@ void read_blur_params(std::string param_filename,
                 break;
             // #7 maximum number of depthmap values within a single image
             case 7:
-                max_dm_num = (uint32_t)std::stoi(params[idx][0]);
+                max_dm_num = (int32_t)std::stoi(params[idx][0]);
                 break;
             // #8 starting number of objects in the farthest layer
             case 8:

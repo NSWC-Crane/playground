@@ -31,8 +31,7 @@ const uint32_t kernel_size = 69;
 #include <file_parser.h>
 
 void read_blur_params(std::string param_filename, 
-    //uint8_t &bg_dm_value,
-    //uint8_t &fg_dm_value,
+    std::string &scenario_name,
     std::pair<uint8_t, double>& bg_dm,
     std::pair<uint8_t, double>& fg_dm,
     std::vector<std::pair<uint8_t, uint8_t>> &bg_br_table,
@@ -42,6 +41,7 @@ void read_blur_params(std::string param_filename,
     std::vector<uint8_t> &br1_table, 
     std::vector<uint8_t> &br2_table,
     uint8_t &dataset_type,
+    uint32_t &img_h, uint32_t &img_w,
     int32_t &max_dm_num,
     uint32_t &num_objects,
     uint32_t &num_images,
@@ -53,13 +53,16 @@ void read_blur_params(std::string param_filename,
     std::vector<std::vector<std::string>> params;
     parse_csv_file(param_filename, params);
 
-
     for (idx = 0; idx < params.size(); ++idx)
     {
         switch (idx)
         {
-            // #0 background blur radius values, br1,br2, br1,br2,... 
             case 0:
+                scenario_name = params[idx][0];
+                break;
+
+            // #1 background blur radius values, br1,br2, br1,br2,... 
+            case 1:
                 try {
                     //bg_dm_value = (uint8_t)std::stoi(params[idx][0]);
                     bg_dm = std::make_pair((uint8_t)std::stoi(params[idx][0]), std::stod(params[idx][1]));
@@ -73,8 +76,8 @@ void read_blur_params(std::string param_filename,
                     throw std::runtime_error("Error parsing line 0 - index: " + std::to_string(jdx));
                 }
                 break;
-            // #1 foreground blur radius values, br1,br2, br1,br2,...  
-            case 1:
+            // #2 foreground blur radius values, br1,br2, br1,br2,...  
+            case 2:
                 try {
                     //fg_dm_value = (uint8_t)std::stoi(params[idx][0]);
                     fg_dm = std::make_pair((uint8_t)std::stoi(params[idx][0]), std::stod(params[idx][1]));
@@ -88,52 +91,65 @@ void read_blur_params(std::string param_filename,
                     throw std::runtime_error("Error parsing line 1 - index: " + std::to_string(jdx));
                 }
                 break;
-            // #2 ROI depthmap values 
-            case 2:
+            // #3 ROI depthmap values 
+            case 3:
                 for (jdx = 0; jdx < params[idx].size(); ++jdx)
                 {
                     depthmap_values.push_back((uint8_t)std::stoi(params[idx][jdx]));
                 }
                 break;
-            // #3 sigma values, the number of values should be greater than the number of depthmap values, DM values are used to index sigma values
-            case 3:
+            // #4 sigma values, the number of values should be greater than the number of depthmap values, DM values are used to index sigma values
+            case 4:
                 for (jdx = 0; jdx < params[idx].size(); ++jdx)
                 {
                     sigma_table.push_back(std::stod(params[idx][jdx]));
                 }
                 break;
-            // #4 blur radius table 1, the number of values should match the number of depthmap values
-            case 4:
+            // #5 blur radius table 1, the number of values should match the number of depthmap values
+            case 5:
                 for (jdx = 0; jdx < params[idx].size(); ++jdx)
                 {
                     br1_table.push_back((uint8_t)std::stod(params[idx][jdx]));
                 }
                 break;
-            // #5 blur radius table 2, the number of values should match the number of depthmap values
-            case 5:
+            // #6 blur radius table 2, the number of values should match the number of depthmap values
+            case 6:
                 for (jdx = 0; jdx < params[idx].size(); ++jdx)
                 {
                     br2_table.push_back((uint8_t)std::stod(params[idx][jdx]));
                 }
                 break;
-            // #6 dataset type: 0 -> random image, 1 -> other
-            case 6:
+            // #7 dataset type: 0 -> random image, 1 -> other
+            case 7:
                 dataset_type = (uint8_t)std::stoi(params[idx][0]);
                 break;
-            // #7 maximum number of depthmap values within a single image
-            case 7:
+            // #8 image size: height, width
+            case 8:
+                try
+                {
+                    img_h = (uint32_t)std::stoi(params[idx][0]);
+                    img_w = (uint32_t)std::stoi(params[idx][1]);
+                }
+                catch (...)
+                {
+                    img_h = 512;
+                    img_w = 512;
+                }
+                break;
+            // #9 maximum number of depthmap values within a single image
+            case 9:
                 max_dm_num = (int32_t)std::stoi(params[idx][0]);
                 break;
-            // #8 starting number of objects in the farthest layer
-            case 8:
+            // #10 starting number of objects in the farthest layer
+            case 10:
                 num_objects = (uint32_t)std::stoi(params[idx][0]);
                 break;
-            // #9 number of images to generate
-            case 9:
+            // #11 number of images to generate
+            case 11:
                 num_images = (uint32_t)std::stoi(params[idx][0]);
                 break;
-            // #10 save location
-            case 10:
+            // #12 save location
+            case 12:
                 save_location = params[idx][0];
                 break;
             default:

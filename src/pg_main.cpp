@@ -91,6 +91,7 @@ int main(int argc, char** argv)
 
     //uint8_t bg_dm_value;
     //uint8_t fg_dm_value;
+    std::string scenario_name;
     std::pair<uint8_t, double> bg_dm;
     std::pair<uint8_t, double> fg_dm;
     std::vector<std::pair<uint8_t, uint8_t>> bg_br_table;
@@ -141,8 +142,8 @@ int main(int argc, char** argv)
     }
 
     std::string param_filename = argv[1];
-    read_blur_params(param_filename, bg_dm, fg_dm, bg_br_table, fg_br_table, depthmap_values, sigma_table,
-        br1_table, br2_table, dataset_type, max_dm_num, num_objects, num_images, save_location);
+    read_blur_params(param_filename, scenario_name, bg_dm, fg_dm, bg_br_table, fg_br_table, depthmap_values, sigma_table,
+        br1_table, br2_table, dataset_type, img_h, img_w, max_dm_num, num_objects, num_images, save_location);
 
     uint16_t min_dm_value = fg_dm.first;        // depthmap_values.front();
     uint16_t max_dm_value = bg_dm.first;        // depthmap_values.back();
@@ -154,13 +155,14 @@ int main(int argc, char** argv)
     mkdir(save_location + "depth_maps");
 
     // save the parameters that were used to generate the dataset
-    std::ofstream param_stream(save_location + "parameters.txt", std::ofstream::out);
+    std::ofstream param_stream(save_location + scenario_name + "parameters.txt", std::ofstream::out);
     param_stream << "# Parameters used to generate the dataset" << std::endl;
     param_stream << depthmap_values << std::endl;
     param_stream << sigma_table << std::endl;
     param_stream << br1_table << std::endl;
     param_stream << br2_table << std::endl;
     param_stream << static_cast<uint32_t>(dataset_type) << std::endl;
+    param_stream << img_h << "," << img_w << std::endl;
     param_stream << max_dm_num << std::endl;
     param_stream << num_objects << std::endl;
     param_stream << num_images << std::endl << std::endl;
@@ -171,14 +173,15 @@ int main(int argc, char** argv)
     // print out the parameters
     std::cout << "------------------------------------------------------------------" << std::endl;
     std::cout << "Parameters used to generate the dataset" << std::endl;
-    std::cout << "Depthmap Values: " << depthmap_values << std::endl;
-    std::cout << "Sigma Table:     " << sigma_table << std::endl;
-    std::cout << "Blur Radius 1:   " << br1_table << std::endl;
-    std::cout << "Blur Radius 2:   " << br2_table << std::endl;
-    std::cout << "Dataset Type:    " << static_cast<uint32_t>(dataset_type) << std::endl;
-    std::cout << "DM Values/Image: " << max_dm_num << std::endl;
-    std::cout << "# of Objects:    " << num_objects << std::endl;
-    std::cout << "# of Images:     " << num_images << std::endl;
+    std::cout << "Depthmap Values:  " << depthmap_values << std::endl;
+    std::cout << "Sigma Table:      " << sigma_table << std::endl;
+    std::cout << "Blur Radius 1:    " << br1_table << std::endl;
+    std::cout << "Blur Radius 2:    " << br2_table << std::endl;
+    std::cout << "Dataset Type:     " << static_cast<uint32_t>(dataset_type) << std::endl;
+    std::cout << "Image Size (hxw): " << img_h << " x " << img_w << std::endl;
+    std::cout << "DM Values/Image:  " << max_dm_num << std::endl;
+    std::cout << "# of Objects:     " << num_objects << std::endl;
+    std::cout << "# of Images:      " << num_images << std::endl;
     std::cout << "------------------------------------------------------------------" << std::endl << std::endl;
 
     // setup the windows to display the results
@@ -224,7 +227,7 @@ int main(int argc, char** argv)
             sn_slope = (0.1234 - sn_int) / (double)(max_dm_value - min_dm_value);
         }
 
-        std::ofstream DataLog_Stream(save_location + "input_file.txt", std::ofstream::out);
+        std::ofstream DataLog_Stream(save_location + scenario_name + "input_file.txt", std::ofstream::out);
         DataLog_Stream << "# Data Directory" << std::endl;
         DataLog_Stream << save_location << std::endl;
         DataLog_Stream << std::endl;
@@ -249,10 +252,10 @@ int main(int argc, char** argv)
             // get the probability that the foreground depthmap value will be used
             fg_x = rng.uniform(0.0, 1.0);
 
-            if (bg_x <= prob_bg)
+            if (bg_x < prob_bg)
                 tmp_dm_num--;
 
-            if (fg_x <= prob_fg)
+            if (fg_x < prob_fg)
                 tmp_dm_num--;
 
             //generate_depthmap_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_values, rng);
@@ -281,7 +284,7 @@ int main(int argc, char** argv)
             img_f2 = img_f1.clone();
 
             // check the background probability and fill in the tables
-            if (bg_x <= prob_bg)
+            if (bg_x < prob_bg)
             {
                 uint16_t dm = rng.uniform(0, bg_br_table.size());
                 tmp_br1_table.push_back(bg_br_table[dm].first);
@@ -301,7 +304,7 @@ int main(int argc, char** argv)
             }
 
             // check the foreground probability and fill in the tables
-            if (fg_x <= prob_fg)
+            if (fg_x < prob_fg)
             {
                 uint16_t dm = rng.uniform(0, bg_br_table.size());
                 tmp_br1_table.push_back(fg_br_table[dm].first);
@@ -379,13 +382,13 @@ int main(int argc, char** argv)
                 blur_layer(f2_layer, img_f2, mask, kernel, rng);
             }
 
-            //cv::hconcat(img_f1, img_f2, montage);
-            //cv::imshow(window_name, montage);
-            //cv::waitKey(10);
+            cv::hconcat(img_f1, img_f2, montage);
+            cv::imshow(window_name, montage);
+            cv::waitKey(10);
 
-            std::string f1_filename = num2str<int>(jdx, "images/image_f1_%04i.png");
-            std::string f2_filename = num2str<int>(jdx, "images/image_f2_%04i.png");
-            std::string dmap_filename = num2str<int>(jdx, "depth_maps/dm_%04i.png");
+            std::string f1_filename = "images/" + scenario_name + num2str<int>(jdx, "image_f1_%04i.png");
+            std::string f2_filename = "images/" + scenario_name + num2str<int>(jdx, "image_f2_%04i.png");
+            std::string dmap_filename = "depth_maps/" + scenario_name + num2str<int>(jdx, "dm_%04i.png");
 
             cv::imwrite(save_location + f1_filename, img_f1);
             cv::imwrite(save_location + f2_filename, img_f2);
@@ -393,10 +396,13 @@ int main(int argc, char** argv)
 
             std::cout << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
             std::cout << dm_values << std::endl;
+
             param_stream << "image " << num2str<int>(jdx, "%03d: ") << dm_values << std::endl;
             param_stream << "           " << tmp_br1_table << std::endl;
             param_stream << "           " << tmp_br2_table << std::endl;
+
             DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
+
         } // end of for loop
 
         param_stream.close();

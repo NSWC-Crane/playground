@@ -3,15 +3,15 @@
 #0 scenraio name: this is the name that is prepended to the rest of the files.  End with "_"
 tb23a_01_
 
-#1 background: depthmap value, probablility, blur radius values - br1, b2, br1, br2,... 
-# 55,56,57,58,59
-#22,0.31, {18,18,19,19,20}, {1,1,1,2,2}
-22,0.0, 18,1, 18,1, 19,1, 19,2, 20,2 
-
-#2 foreground: depthmap value, probablility, blur radius values - br1, b2, br1, br2,... 
+#1 background: depthmap value, probablility, blur radius values - br1, br2, br1, br2,... 
 # 81,82,83,84,85
-#0,0.35, {6,4,3,2,1}, {23,22,21,20,18}
-0,0.0, 6,23, 4,22, 3,21, 2,20, 1,18
+#22,0.31, {18,18,19,19,20,20,21,21,22,22}, {1,1,1,2,2,3,3,4,4,5}
+22,0.0, 18,1, 18,1, 19,1, 19,2, 20,2, 20,3, 21,3, 21,4, 22,4, 22,5 
+
+#2 foreground: depthmap value, probablility, blur radius values - br1, br2, br1, br2,... 
+# 55,56,57,58,59
+#0,0.35, {13,11,10,8,7,6,4,3,2,1}, {30,29,27,26,24,23,22,21,20,18},
+0,0.0, 13,30, 11,29, 10,27, 8,26, 7,24, 6,23, 4,22, 3,21, 2,20, 1,18
 
 #3 ROI depthmap values, the first value is the foregraound depthmap value and the last value is the background depthmap value
 # 0 => all values before the region of interest, 22 => all values after the region of interest

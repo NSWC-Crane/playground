@@ -40,8 +40,8 @@ tb23a_22_
 50
 
 #11 number of images to generate
-450
+20
 
 #12 save location
-D:/data/dfd/tb23a_train/
+/home/owner/data/dfd/tb23a_train/
 

@@ -34,13 +34,13 @@ tb23b_00_
 512, 512
 
 #9 maximum number of depthmap values within a single image
-10
+1
 
 #10 starting number of objects in the farthest layer
 50
 
 #11 number of images to generate
-450
+20
 
 #12 save location
 /home/owner/data/dfd/tb23b_train/

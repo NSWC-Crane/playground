@@ -40,6 +40,13 @@ void read_blur_params(std::string param_filename,
     std::vector<double> &sigma_table, 
     std::vector<uint8_t> &br1_table, 
     std::vector<uint8_t> &br2_table,
+    uint8_t& aperture,
+    uint8_t& slope,
+    uint8_t& intercept,
+    uint32_t& wavelength_min,
+    uint32_t& wavelength_max,
+    float& refractive_index_min,
+    float& refractive_index_max,
     uint8_t &dataset_type,
     uint32_t &img_h, uint32_t &img_w,
     int32_t &max_dm_num,
@@ -121,10 +128,20 @@ void read_blur_params(std::string param_filename,
                 break;
             // #7 dataset type: 0 -> random image, 1 -> other
             case 7:
+                aperture = (uint8_t)std::stoi(params[idx][0]);
+                slope = (uint8_t)std::stoi(params[idx][1]);
+                intercept = (uint8_t)std::stoi(params[idx][2]);
+                wavelength_min = (uint32_t)std::stoi(params[idx][3]);
+                wavelength_max = (uint32_t)std::stoi(params[idx][4]);
+                refractive_index_min = (float)std::stof(params[idx][5]);
+                refractive_index_max = (float)std::stof(params[idx][6]);
+                break;
+            // #8 dataset type: 0 -> random image, 1 -> other
+            case 8:
                 dataset_type = (uint8_t)std::stoi(params[idx][0]);
                 break;
-            // #8 image size: height, width
-            case 8:
+            // #9 image size: height, width
+            case 9:
                 try
                 {
                     img_h = (uint32_t)std::stoi(params[idx][0]);
@@ -136,20 +153,20 @@ void read_blur_params(std::string param_filename,
                     img_w = 512;
                 }
                 break;
-            // #9 maximum number of depthmap values within a single image
-            case 9:
+            // #10 maximum number of depthmap values within a single image
+            case 10:
                 max_dm_num = (int32_t)std::stoi(params[idx][0]);
                 break;
-            // #10 starting number of objects in the farthest layer
-            case 10:
+            // #11 starting number of objects in the farthest layer
+            case 11:
                 num_objects = (uint32_t)std::stoi(params[idx][0]);
                 break;
-            // #11 number of images to generate
-            case 11:
+            // #12 number of images to generate
+            case 12:
                 num_images = (uint32_t)std::stoi(params[idx][0]);
                 break;
-            // #12 save location
-            case 12:
+            // #13 save location
+            case 13:
                 save_location = params[idx][0];
                 break;
             default:

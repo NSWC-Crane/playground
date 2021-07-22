@@ -106,6 +106,13 @@ int main(int argc, char** argv)
     std::vector<double> sigma_table;
     std::vector<uint8_t> br1_table, tmp_br1_table;
     std::vector<uint8_t> br2_table, tmp_br2_table;
+    uint8_t aperture;
+    uint8_t slope;
+    uint8_t intercept;
+    uint32_t wavelength_min;
+    uint32_t wavelength_max;
+    float refractive_index_min;
+    float refractive_index_max;
     uint8_t dataset_type;
     int32_t max_dm_num;
     uint32_t num_objects;
@@ -143,7 +150,8 @@ int main(int argc, char** argv)
 
     std::string param_filename = argv[1];
     read_blur_params(param_filename, scenario_name, bg_dm, fg_dm, bg_br_table, fg_br_table, depthmap_values, sigma_table,
-        br1_table, br2_table, dataset_type, img_h, img_w, max_dm_num, num_objects, num_images, save_location);
+        br1_table, br2_table, aperture, slope, intercept, wavelength_min, wavelength_max, refractive_index_min, refractive_index_max,
+        dataset_type, img_h, img_w, max_dm_num, num_objects, num_images, save_location);
 
     uint16_t min_dm_value = fg_dm.first;        // depthmap_values.front();
     uint16_t max_dm_value = bg_dm.first;        // depthmap_values.back();

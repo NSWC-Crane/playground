@@ -46,5 +46,5 @@ tb23a_00_
 20
 
 #13 save location
-/home/owner/data/dfd/tb23a_train/
+/home/owner/data/dfd/tb23a_train2/
 

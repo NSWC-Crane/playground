@@ -37,10 +37,23 @@ typedef void* HINSTANCE;
 #include <cv_blur_process.h>
 #include <cv_random_image_gen.h>
 #include <cv_create_gaussian_kernel.h>
+#include <cv_dft_conv.h>
 #include <blur_params.h>
 #include <num2string.h>
 #include <file_ops.h>
 
+//template<typename T>
+//bool comp_pair(T fisrt, T second)
+//{
+//    return first < second;
+//}
+
+
+// ----------------------------------------------------------------------------------------
+bool compare(std::pair<uint8_t, uint8_t> p1, std::pair<uint8_t, uint8_t> p2)
+{
+    return max(p1.first, p1.second) < max(p2.first, p2.second);
+}
 
 // ----------------------------------------------------------------------------------------
 inline std::ostream& operator<<(std::ostream& out, std::vector<uint8_t>& item)
@@ -75,6 +88,12 @@ int main(int argc, char** argv)
 
     cv::RNG rng(time(NULL));
 
+    // timing variables
+    typedef std::chrono::duration<double> d_sec;
+    auto start_time = chrono::system_clock::now();
+    auto stop_time = chrono::system_clock::now();
+    auto elapsed_time = chrono::duration_cast<d_sec>(stop_time - start_time);
+
     cv::Mat img_f1, img_f2;
     cv::Mat kernel;
     cv::Mat output_img, mask;
@@ -101,18 +120,20 @@ int main(int argc, char** argv)
     double bg_x = 0, fg_x = 0;
     //double sigma_1 = 0.0, sigma_2 = 0.0;
     //uint8_t dm_value;
+    std::vector<cv::Mat> blur_kernels;
+    std::vector<cv::Mat> fft_blur_kernels;
 
     std::vector<uint8_t> depthmap_values;
     std::vector<double> sigma_table;
     std::vector<uint8_t> br1_table, tmp_br1_table;
     std::vector<uint8_t> br2_table, tmp_br2_table;
     uint8_t aperture;
-    uint8_t slope;
-    uint8_t intercept;
+    uint16_t slope;
+    uint16_t intercept;
     uint32_t wavelength_min;
     uint32_t wavelength_max;
-    float refractive_index_min;
-    float refractive_index_max;
+    double refractive_index_min;
+    double refractive_index_max;
     uint8_t dataset_type;
     int32_t max_dm_num;
     uint32_t num_objects;
@@ -157,6 +178,31 @@ int main(int argc, char** argv)
     uint16_t max_dm_value = bg_dm.first;        // depthmap_values.back();
     prob_bg = bg_dm.second;                     // set the probablility of selecting the background depthmap value
     prob_fg = fg_dm.second;                     // set the probability of selecting the foreground depthmap value
+
+    // get the max value of blur radius
+    uint8_t max_br_value = *std::max_element(br1_table.begin(), br1_table.end());
+    max_br_value = std::max(max_br_value, *std::max_element(br2_table.begin(), br2_table.end()));
+    auto p1 = *std::max_element(bg_br_table.begin(), bg_br_table.end(), compare);
+    auto p2 = *std::max_element(fg_br_table.begin(), fg_br_table.end(), compare);
+    max_br_value = std::max(max_br_value, std::max(p1.first, p1.second));
+    max_br_value = std::max(max_br_value, std::max(p2.first, p2.second));
+
+    cv::Mat tmp;
+    // gerenate all of the kernels once and then use them throughout
+    for (idx = 0; idx <= max_br_value; ++idx)
+    {
+        create_gaussian_kernel(kernel_size, sigma_table[idx], kernel);
+        blur_kernels.push_back(kernel.clone());
+
+        cv::dft(kernel, tmp);// , cv::DFT_COMPLEX_OUTPUT);
+        fft_blur_kernels.push_back(tmp.clone());    
+    }
+
+
+    //cv::Mat planes[2];// = { cv::Mat::zeros(blur_kernels[max_br_value].size(), CV_32F), cv::Mat::zeros(blur_kernels[max_br_value].size(), CV_32F) };
+
+    //cv::split(fft_blur_kernels[0], planes);
+
 
     // create results directories if they do not exist
     mkdir(save_location + "images");
@@ -243,6 +289,8 @@ int main(int argc, char** argv)
         
         std::cout << "Data Directory: " << save_location << std::endl;
 
+        start_time = chrono::system_clock::now();
+
         for (jdx = 0; jdx < num_images; ++jdx)
         {
             // clear out the temp blur radius tables
@@ -323,12 +371,20 @@ int main(int argc, char** argv)
                 //dm_values.insert(dm_values.begin(), )
             }
 
-            // create gaussian kernel and blur imgs
-            create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[0]], kernel);
-            cv::filter2D(img_f1, img_f1, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-            create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[0]], kernel);
-            cv::filter2D(img_f2, img_f2, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+            cv::Mat img_f1_t = img_f1.clone();
+            cv::Mat dst;
+            dft_conv_rgb(img_f1_t, fft_blur_kernels[tmp_br1_table[0]], dst);
+
+
+            // create gaussian kernel and blur imgs
+            //create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[0]], kernel);
+            //cv::filter2D(img_f1, img_f1, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+            cv::filter2D(img_f1, img_f1, -1, blur_kernels[tmp_br1_table[0]], cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+
+            //create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[0]], kernel);
+            //cv::filter2D(img_f2, img_f2, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+            cv::filter2D(img_f2, img_f2, -1, blur_kernels[tmp_br2_table[0]], cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
             // create the initial depth map
             cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
@@ -381,13 +437,15 @@ int main(int argc, char** argv)
 
                 // blur f1
                 //create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_indexes[idx]]], kernel);
-                create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[idx]], kernel);
-                blur_layer(f1_layer, img_f1, mask, kernel, rng);
+                //create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[idx]], kernel);
+                //blur_layer(f1_layer, img_f1, mask, kernel, rng);
+                blur_layer(f1_layer, img_f1, mask, blur_kernels[tmp_br1_table[idx]], rng);
 
                 // blur f2
                 //create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_indexes[idx]]], kernel);
-                create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[idx]], kernel);
-                blur_layer(f2_layer, img_f2, mask, kernel, rng);
+                //create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[idx]], kernel);
+                //blur_layer(f2_layer, img_f2, mask, kernel, rng);
+                blur_layer(f2_layer, img_f2, mask, blur_kernels[tmp_br2_table[idx]], rng);
             }
 
             cv::hconcat(img_f1, img_f2, montage);
@@ -413,8 +471,14 @@ int main(int argc, char** argv)
 
         } // end of for loop
 
-        param_stream.close();
+        stop_time = chrono::system_clock::now();
+        elapsed_time = chrono::duration_cast<d_sec>(stop_time - start_time);
 
+        std::cout << std::endl << "------------------------------------------------------------------" << std::endl;
+        std::cout << "elapsed_time (s): " << elapsed_time.count() << std::endl;
+        std::cout << "------------------------------------------------------------------" << std::endl << std::endl;
+
+        param_stream.close();
         DataLog_Stream.close();
     }
     catch(std::exception& e)

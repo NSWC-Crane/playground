@@ -27,21 +27,24 @@ tb23a_
 #6 blur radius table 2, the number of values should match the number of depthmap values
 17,16,15,14,13,12,12,11,10,9,8,8,7,6,5,5,4,3,3,2,1
 
-#7 dataset type: 0 -> random image, 1 -> other, 2-> knife edge
+#7 aperture (mm), slope, intercept, min wavelength (nm), max wavelength (nm), min refractive index (m^(-2/3)), max refractive index (m^(-2/3))
+95, 10, 600, 380, 800, 0.00000000000001, 0.00000000000000001
+
+#8 dataset type: 0 -> random image, 1 -> other, 2-> knife edge
 0
 
-#8 image size: height, width
+#9 image size: height, width
 512, 512
 
-#9 maximum number of depthmap values within a single image
+#10 maximum number of depthmap values within a single image
 10
 
-#10 starting number of objects in the farthest layer
+#11 starting number of objects in the farthest layer
 50
 
-#11 number of images to generate
+#12 number of images to generate
 50
 
-#12 save location
-/home/owner/data/dfd/tb23a_test/
+#13 save location
+d:/data/dfd/tb23a_test2/
 

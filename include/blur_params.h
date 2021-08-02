@@ -41,12 +41,12 @@ void read_blur_params(std::string param_filename,
     std::vector<uint8_t> &br1_table, 
     std::vector<uint8_t> &br2_table,
     uint8_t& aperture,
-    uint8_t& slope,
-    uint8_t& intercept,
+    uint16_t& slope,
+    uint16_t& intercept,
     uint32_t& wavelength_min,
     uint32_t& wavelength_max,
-    float& refractive_index_min,
-    float& refractive_index_max,
+    double& refractive_index_min,
+    double& refractive_index_max,
     uint8_t &dataset_type,
     uint32_t &img_h, uint32_t &img_w,
     int32_t &max_dm_num,
@@ -129,12 +129,12 @@ void read_blur_params(std::string param_filename,
             // #7 dataset type: 0 -> random image, 1 -> other
             case 7:
                 aperture = (uint8_t)std::stoi(params[idx][0]);
-                slope = (uint8_t)std::stoi(params[idx][1]);
-                intercept = (uint8_t)std::stoi(params[idx][2]);
+                slope = (uint16_t)std::stoi(params[idx][1]);
+                intercept = (uint16_t)std::stoi(params[idx][2]);
                 wavelength_min = (uint32_t)std::stoi(params[idx][3]);
                 wavelength_max = (uint32_t)std::stoi(params[idx][4]);
-                refractive_index_min = (float)std::stof(params[idx][5]);
-                refractive_index_max = (float)std::stof(params[idx][6]);
+                refractive_index_min = std::stod(params[idx][5]);
+                refractive_index_max = std::stod(params[idx][6]);
                 break;
             // #8 dataset type: 0 -> random image, 1 -> other
             case 8:

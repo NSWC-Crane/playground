@@ -85,7 +85,7 @@ void generate_checkerboard(uint32_t block_w, uint32_t block_h, uint32_t img_w, u
 
     cv::Mat white = cv::Mat(block_w, block_h, CV_8UC3, cv::Scalar::all(255));
 
-    checker_board = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0));
+    checker_board = cv::Mat(img_h + block_h, img_w + block_w, CV_8UC3, cv::Scalar::all(0));
 
     bool color_row = false;
     bool color_column = false;
@@ -106,7 +106,8 @@ void generate_checkerboard(uint32_t block_w, uint32_t block_h, uint32_t img_w, u
     }
 
     // need to add cropping of image
-
+    cv::Rect roi(0, 0, img_w, img_h);
+    checker_board = checker_board(roi);
 }
 
 // ----------------------------------------------------------------------------------------
@@ -368,7 +369,7 @@ int main(int argc, char** argv)
 
             // black and white checkerboard
             case 3:
-                generate_checkerboard(300, 300, img_w, img_h, img_f1);
+                generate_checkerboard(48, 48, img_w, img_h, img_f1);
                 break;
             }
 

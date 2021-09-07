@@ -309,8 +309,8 @@ int main(int argc, char** argv)
 #endif
 
             init((long)time(NULL));
-            sn_int = 0.01;
-            sn_slope = (0.1234 - sn_int) / (double)(max_dm_value - min_dm_value);
+            sn_int = 0.02;
+            sn_slope = (0.06 - sn_int) / (double)(max_dm_value - min_dm_value);
         }
 
         std::ofstream DataLog_Stream(save_location + scenario_name + "input_file.txt", std::ofstream::out);
@@ -349,33 +349,6 @@ int main(int argc, char** argv)
             //generate_depthmap_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_values, rng);
             generate_depthmap_index_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_indexes, rng);
 
-            N = (uint32_t)(img_h * img_w * 0.001);
-            switch (dataset_type)
-            {
-            case 0:
-                generate_random_image(img_f1, rng, img_h, img_w, BN, 0.1);
-                break;
-
-            case 1:
-                img_f1 = cv::Mat(img_h, img_w, CV_8UC3);
-                sn_scale = sn_slope * dm_indexes[0] + sn_int;
-                create_color_map(img_h, img_w, sn_scale, octaves, persistence, wood.data(), img_f1.data);
-                break;
-
-            case 2:
-                //img_f1 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0,0,0));
-                cv::hconcat(cv::Mat(img_h, img_w >> 1, CV_8UC3, cv::Scalar::all(0)), cv::Mat(img_h, img_w - (img_w >> 1), CV_8UC3, cv::Scalar::all(255)), img_f1);
-                break;
-
-            // black and white checkerboard
-            case 3:
-                generate_checkerboard(48, 48, img_w, img_h, img_f1);
-                break;
-            }
-
-            // clone the images
-            img_f2 = img_f1.clone();
-
             // check the background probability and fill in the tables
             if (bg_x < prob_bg)
             {
@@ -408,10 +381,37 @@ int main(int argc, char** argv)
                 //dm_values.insert(dm_values.begin(), )
             }
 
+            N = (uint32_t)(img_h * img_w * 0.001);
+            switch (dataset_type)
+            {
+            case 0:
+                generate_random_image(img_f1, rng, img_h, img_w, BN, 0.1);
+                break;
 
-            cv::Mat img_f1_t = img_f1.clone();
-            cv::Mat dst;
-            dft_conv_rgb(img_f1_t, fft_blur_kernels[tmp_br1_table[0]], dst);
+            case 1:
+                img_f1 = cv::Mat(img_h, img_w, CV_8UC3);
+                sn_scale = sn_slope * dm_values[0] + sn_int;
+                create_color_map(img_h, img_w, sn_scale, octaves, persistence, wood.data(), img_f1.data);
+                break;
+
+            case 2:
+                //img_f1 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0,0,0));
+                cv::hconcat(cv::Mat(img_h, img_w >> 1, CV_8UC3, cv::Scalar::all(0)), cv::Mat(img_h, img_w - (img_w >> 1), CV_8UC3, cv::Scalar::all(255)), img_f1);
+                break;
+
+            // black and white checkerboard
+            case 3:
+                generate_checkerboard(48, 48, img_w, img_h, img_f1);
+                break;
+            }
+
+            // clone the images
+            img_f2 = img_f1.clone();
+
+
+            //cv::Mat img_f1_t = img_f1.clone();
+            //cv::Mat dst;
+            //dft_conv_rgb(img_f1_t, fft_blur_kernels[tmp_br1_table[0]], dst);
 
 
             // create gaussian kernel and blur imgs
@@ -452,7 +452,7 @@ int main(int argc, char** argv)
                     break;
                     
                 case 1:
-                    sn_scale = sn_slope * dm_indexes[idx] + sn_int;
+                    sn_scale = sn_slope * dm_values[idx] + sn_int;
                     random_img = cv::Mat(img_h, img_w, CV_8UC3);
                     create_color_map(img_h, img_w, sn_scale, octaves, persistence, wood.data(), random_img.data);
                     break;

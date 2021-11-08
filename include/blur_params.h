@@ -31,7 +31,26 @@ const uint32_t kernel_size = 69;
 
 #include <file_parser.h>
 
-void read_blur_params(std::string param_filename, 
+//-----------------------------------------------------------------------------
+std::string get_env_variable(std::string env_var)
+{
+    char* p;
+    p = getenv(env_var.c_str());
+
+    if (p == NULL)
+        return "";
+    else
+        return std::string(p);
+}
+
+//-----------------------------------------------------------------------------
+void get_platform(std::string& platform)
+{
+    platform = get_env_variable("PLATFORM");
+}
+
+//-----------------------------------------------------------------------------
+void read_blur_params(std::string param_filename,
     std::string &scenario_name,
     std::pair<uint8_t, double>& bg_dm,
     std::pair<uint8_t, double>& fg_dm,

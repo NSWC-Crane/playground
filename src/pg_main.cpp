@@ -125,6 +125,7 @@ int main(int argc, char** argv)
     auto start_time = chrono::system_clock::now();
     auto stop_time = chrono::system_clock::now();
     auto elapsed_time = chrono::duration_cast<d_sec>(stop_time - start_time);
+    std::string platform;
 
     cv::Mat img_f1, img_f2;
     cv::Mat kernel;
@@ -201,6 +202,14 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    uint8_t HPC = 0;
+    get_platform(platform);
+    if (platform.compare(0, 3, "HPC") == 0)
+    {
+        std::cout << "HPC Platform Detected." << std::endl;
+        HPC = 1;
+    }
+
     std::string param_filename = argv[1];
     read_blur_params(param_filename, scenario_name, bg_dm, fg_dm, bg_br_table, fg_br_table, depthmap_values, sigma_table,
         br1_table, br2_table, aperture, slope, intercept, wavelength_min, wavelength_max, refractive_index_min, refractive_index_max,
@@ -270,9 +279,13 @@ int main(int argc, char** argv)
     std::cout << "# of Images:      " << num_images << std::endl;
     std::cout << "------------------------------------------------------------------" << std::endl << std::endl;
 
-    // setup the windows to display the results
-    cv::namedWindow(window_name, cv::WINDOW_NORMAL);
-    cv::resizeWindow(window_name, 2*img_w, img_h);
+    // if the platform is an HPC platform then don't display anything
+    if (!HPC)
+    {
+        // setup the windows to display the results
+        cv::namedWindow(window_name, cv::WINDOW_NORMAL);
+        cv::resizeWindow(window_name, 2 * img_w, img_h);
+    }
 
     // do work here
     try
@@ -485,9 +498,13 @@ int main(int argc, char** argv)
                 blur_layer(f2_layer, img_f2, mask, blur_kernels[tmp_br2_table[idx]], rng);
             }
 
-            cv::hconcat(img_f1, img_f2, montage);
-            cv::imshow(window_name, montage);
-            cv::waitKey(10);
+            // if the platform is an HPC platform then don't display anything
+            if (!HPC)
+            {
+                cv::hconcat(img_f1, img_f2, montage);
+                cv::imshow(window_name, montage);
+                cv::waitKey(10);
+            }
 
             std::string f1_filename = "images/" + scenario_name + num2str<int>(jdx, "image_f1_%04i.png");
             std::string f2_filename = "images/" + scenario_name + num2str<int>(jdx, "image_f2_%04i.png");

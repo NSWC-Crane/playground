@@ -385,7 +385,7 @@ int main(int argc, char** argv)
             // check the foreground probability and fill in the tables
             if (fg_x < prob_fg)
             {
-                uint16_t dm = rng.uniform(0, bg_br_table.size());
+                uint16_t dm = rng.uniform(0, fg_br_table.size());
                 tmp_br1_table.push_back(fg_br_table[dm].first);
                 tmp_br2_table.push_back(fg_br_table[dm].second);
                 //sigma_1 = sigma_table[bg_br_table[dm].first];

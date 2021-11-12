@@ -1,4 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
+// D:\Projects\vs_gen\build\Release\vs_gen.lib
 
 #if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
 #include <windows.h>
@@ -34,13 +35,15 @@ typedef void* HINSTANCE;
 #include <opencv2/imgcodecs.hpp>
 
 // custom includes
-#include <cv_blur_process.h>
-#include <cv_random_image_gen.h>
-#include <cv_create_gaussian_kernel.h>
-#include <cv_dft_conv.h>
+//#include <cv_blur_process.h>
+//#include <cv_random_image_gen.h>
+//#include <cv_create_gaussian_kernel.h>
+//#include <cv_dft_conv.h>
 #include <blur_params.h>
 #include <num2string.h>
 #include <file_ops.h>
+
+#include <vs_gen_lib.h>
 
 //template<typename T>
 //bool comp_pair(T fisrt, T second)
@@ -50,10 +53,10 @@ typedef void* HINSTANCE;
 
 
 // ----------------------------------------------------------------------------------------
-bool compare(std::pair<uint8_t, uint8_t> p1, std::pair<uint8_t, uint8_t> p2)
-{
-    return max(p1.first, p1.second) < max(p2.first, p2.second);
-}
+//bool compare(std::pair<uint8_t, uint8_t> p1, std::pair<uint8_t, uint8_t> p2)
+//{
+//    return max(p1.first, p1.second) < max(p2.first, p2.second);
+//}
 
 // ----------------------------------------------------------------------------------------
 inline std::ostream& operator<<(std::ostream& out, std::vector<uint8_t>& item)
@@ -133,6 +136,7 @@ int main(int argc, char** argv)
     cv::Mat f1_layer, f2_layer;
     cv::Mat random_img;
     cv::Mat montage;
+    cv::Mat depth_map;
     std::vector<uint16_t> dm_values;
     std::vector<uint16_t> dm_indexes;
     int32_t min_N, max_N;
@@ -188,7 +192,7 @@ int main(int argc, char** argv)
     typedef unsigned int (*octave_evaluate_)(double x, double y, double scale, unsigned int octaves, double persistence);
     typedef void (*create_color_map_)(unsigned int h, unsigned int w, double scale, unsigned int octaves, double persistence, unsigned char* color, unsigned char* map);
     HINSTANCE simplex_noise_lib = NULL;
-    init_ init;
+    init_ simplex_init;
     evaluate_ evaluate;
     octave_evaluate_ octave_evaluate;
     create_color_map_ create_color_map;
@@ -215,34 +219,34 @@ int main(int argc, char** argv)
         br1_table, br2_table, aperture, slope, intercept, wavelength_min, wavelength_max, refractive_index_min, refractive_index_max,
         dataset_type, img_h, img_w, max_dm_num, num_objects, num_images, save_location);
 
-    uint16_t min_dm_value = fg_dm.first;        // depthmap_values.front();
-    uint16_t max_dm_value = bg_dm.first;        // depthmap_values.back();
-    prob_bg = bg_dm.second;                     // set the probablility of selecting the background depthmap value
-    prob_fg = fg_dm.second;                     // set the probability of selecting the foreground depthmap value
+    //uint16_t min_dm_value = fg_dm.first;        // depthmap_values.front();
+    //uint16_t max_dm_value = bg_dm.first;        // depthmap_values.back();
+    //prob_bg = bg_dm.second;                     // set the probablility of selecting the background depthmap value
+    //prob_fg = fg_dm.second;                     // set the probability of selecting the foreground depthmap value
 
-    // get the max value of blur radius
-    uint8_t max_br_value = *std::max_element(br1_table.begin(), br1_table.end());
-    max_br_value = std::max(max_br_value, *std::max_element(br2_table.begin(), br2_table.end()));
-    auto p1 = *std::max_element(bg_br_table.begin(), bg_br_table.end(), compare);
-    auto p2 = *std::max_element(fg_br_table.begin(), fg_br_table.end(), compare);
-    max_br_value = std::max(max_br_value, std::max(p1.first, p1.second));
-    max_br_value = std::max(max_br_value, std::max(p2.first, p2.second));
+    //// get the max value of blur radius
+    //uint8_t max_br_value = *std::max_element(br1_table.begin(), br1_table.end());
+    //max_br_value = std::max(max_br_value, *std::max_element(br2_table.begin(), br2_table.end()));
+    //auto p1 = *std::max_element(bg_br_table.begin(), bg_br_table.end(), compare);
+    //auto p2 = *std::max_element(fg_br_table.begin(), fg_br_table.end(), compare);
+    //max_br_value = std::max(max_br_value, std::max(p1.first, p1.second));
+    //max_br_value = std::max(max_br_value, std::max(p2.first, p2.second));
 
-    cv::Mat tmp;
-    // gerenate all of the kernels once and then use them throughout
-    for (idx = 0; idx <= max_br_value; ++idx)
-    {
-        create_gaussian_kernel(kernel_size, sigma_table[idx], kernel);
-        blur_kernels.push_back(kernel.clone());
+    //cv::Mat tmp;
+    //// gerenate all of the kernels once and then use them throughout
+    //for (idx = 0; idx <= max_br_value; ++idx)
+    //{
+    //    create_gaussian_kernel(kernel_size, sigma_table[idx], kernel);
+    //    blur_kernels.push_back(kernel.clone());
 
-        cv::dft(kernel, tmp);// , cv::DFT_COMPLEX_OUTPUT);
-        fft_blur_kernels.push_back(tmp.clone());    
-    }
+    //    cv::dft(kernel, tmp);// , cv::DFT_COMPLEX_OUTPUT);
+    //    fft_blur_kernels.push_back(tmp.clone());    
+    //}
 
 
-    //cv::Mat planes[2];// = { cv::Mat::zeros(blur_kernels[max_br_value].size(), CV_32F), cv::Mat::zeros(blur_kernels[max_br_value].size(), CV_32F) };
+    ////cv::Mat planes[2];// = { cv::Mat::zeros(blur_kernels[max_br_value].size(), CV_32F), cv::Mat::zeros(blur_kernels[max_br_value].size(), CV_32F) };
 
-    //cv::split(fft_blur_kernels[0], planes);
+    ////cv::split(fft_blur_kernels[0], planes);
 
 
     // create results directories if they do not exist
@@ -262,8 +266,6 @@ int main(int argc, char** argv)
     param_stream << num_objects << std::endl;
     param_stream << num_images << std::endl << std::endl;
     param_stream << "------------------------------------------------------------------" << std::endl;
-
-    //param_stream.close();
 
     // print out the parameters
     std::cout << "------------------------------------------------------------------" << std::endl;
@@ -290,41 +292,41 @@ int main(int argc, char** argv)
     // do work here
     try
     {    
-        if (dataset_type == 1)
-        {
-            lib_filename = "D:/Projects/simplex_noise/build/Release/sn_lib.dll";
-
-#if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
-
-            simplex_noise_lib = LoadLibrary(lib_filename.c_str());
-
-            if (simplex_noise_lib == NULL)
-            {
-                throw std::runtime_error("error loading library");
-            }
-
-            init = (init_)GetProcAddress(simplex_noise_lib, "init");
-            evaluate = (evaluate_)GetProcAddress(simplex_noise_lib, "evaluate");
-            octave_evaluate = (octave_evaluate_)GetProcAddress(simplex_noise_lib, "octave_evaluate");
-            create_color_map = (create_color_map_)GetProcAddress(simplex_noise_lib, "create_color_map");
-#else
-            simplex_noise_lib = dlopen(lib_filename.c_str(), RTLD_NOW);
-
-            if (simplex_noise_lib == NULL)
-            {
-                throw std::runtime_error("error loading library");
-            }
-
-            init = (init_)dlsym(simplex_noise_lib, "init");
-            evaluate = (evaluate_)dlsym(simplex_noise_lib, "evaluate");
-            octave_evaluate = (octave_evaluate_)dlsym(simplex_noise_lib, "octave_evaluate");
-            create_color_map = (create_color_map_)dlsym(simplex_noise_lib, "create_color_map");
-#endif
-
-            init((long)time(NULL));
-            sn_int = 0.02;
-            sn_slope = (0.06 - sn_int) / (double)(max_dm_value - min_dm_value);
-        }
+//        if (dataset_type == 1)
+//        {
+//            lib_filename = "D:/Projects/simplex_noise/build/Release/sn_lib.dll";
+//
+//#if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
+//
+//            simplex_noise_lib = LoadLibrary(lib_filename.c_str());
+//
+//            if (simplex_noise_lib == NULL)
+//            {
+//                throw std::runtime_error("error loading library");
+//            }
+//
+//            init = (init_)GetProcAddress(simplex_noise_lib, "init");
+//            evaluate = (evaluate_)GetProcAddress(simplex_noise_lib, "evaluate");
+//            octave_evaluate = (octave_evaluate_)GetProcAddress(simplex_noise_lib, "octave_evaluate");
+//            create_color_map = (create_color_map_)GetProcAddress(simplex_noise_lib, "create_color_map");
+//#else
+//            simplex_noise_lib = dlopen(lib_filename.c_str(), RTLD_NOW);
+//
+//            if (simplex_noise_lib == NULL)
+//            {
+//                throw std::runtime_error("error loading library");
+//            }
+//
+//            init = (init_)dlsym(simplex_noise_lib, "init");
+//            evaluate = (evaluate_)dlsym(simplex_noise_lib, "evaluate");
+//            octave_evaluate = (octave_evaluate_)dlsym(simplex_noise_lib, "octave_evaluate");
+//            create_color_map = (create_color_map_)dlsym(simplex_noise_lib, "create_color_map");
+//#endif
+//
+//            init((long)time(NULL));
+//            sn_int = 0.02;
+//            sn_slope = (0.06 - sn_int) / (double)(max_dm_value - min_dm_value);
+//        }
 
         std::ofstream DataLog_Stream(save_location + scenario_name + "input_file.txt", std::ofstream::out);
         DataLog_Stream << "# Data Directory" << std::endl;
@@ -334,169 +336,180 @@ int main(int argc, char** argv)
         
         std::cout << "Data Directory: " << save_location << std::endl;
 
+        init(sigma_table.size(), sigma_table.data(), depthmap_values.size(), depthmap_values.data(),
+            br1_table.data(), br2_table.data(), bg_br_table.size(), (void*)bg_br_table.data(), fg_br_table.size(), (void*)fg_br_table.data(),
+            fg_dm.second, bg_dm.second, fg_dm.first, bg_dm.first, max_dm_num);
+
         start_time = chrono::system_clock::now();
 
         for (jdx = 0; jdx < num_images; ++jdx)
         {
-            // clear out the temp blur radius tables
-            tmp_br1_table.clear();
-            tmp_br2_table.clear();
+            //// clear out the temp blur radius tables
+            //tmp_br1_table.clear();
+            //tmp_br2_table.clear();
 
-            dm_values.clear();
+            //dm_values.clear();
 
-            // generate random dm_values that include the foreground and background values
-            int32_t tmp_dm_num = max_dm_num;
+            //// generate random dm_values that include the foreground and background values
+            //int32_t tmp_dm_num = max_dm_num;
 
-            // get the probablility that the background depthmap value will be used
-            bg_x = rng.uniform(0.0, 1.0);
+            //// get the probablility that the background depthmap value will be used
+            //bg_x = rng.uniform(0.0, 1.0);
 
-            // get the probability that the foreground depthmap value will be used
-            fg_x = rng.uniform(0.0, 1.0);
+            //// get the probability that the foreground depthmap value will be used
+            //fg_x = rng.uniform(0.0, 1.0);
 
-            if (bg_x < prob_bg)
-                tmp_dm_num--;
+            //if (bg_x < prob_bg)
+            //    tmp_dm_num--;
 
-            if (fg_x < prob_fg)
-                tmp_dm_num--;
+            //if (fg_x < prob_fg)
+            //    tmp_dm_num--;
 
-            //generate_depthmap_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_values, rng);
-            generate_depthmap_index_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_indexes, rng);
+            ////generate_depthmap_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_values, rng);
+            //generate_depthmap_index_set(min_dm_value, max_dm_value, tmp_dm_num, depthmap_values, dm_indexes, rng);
 
-            // check the background probability and fill in the tables
-            if (bg_x < prob_bg)
-            {
-                uint16_t dm = rng.uniform(0, bg_br_table.size());
-                tmp_br1_table.push_back(bg_br_table[dm].first);
-                tmp_br2_table.push_back(bg_br_table[dm].second);
-                //sigma_1 = sigma_table[bg_br_table[dm].first];
-                //sigma_2 = sigma_table[bg_br_table[dm].second];
-                dm_values.push_back(bg_dm.first);
-                //dm_values.insert(dm_values.begin(), )
-            }
+            //// check the background probability and fill in the tables
+            //if (bg_x < prob_bg)
+            //{
+            //    uint16_t dm = rng.uniform(0, bg_br_table.size());
+            //    tmp_br1_table.push_back(bg_br_table[dm].first);
+            //    tmp_br2_table.push_back(bg_br_table[dm].second);
+            //    //sigma_1 = sigma_table[bg_br_table[dm].first];
+            //    //sigma_2 = sigma_table[bg_br_table[dm].second];
+            //    dm_values.push_back(bg_dm.first);
+            //    //dm_values.insert(dm_values.begin(), )
+            //}
 
-            // fill in the tables for the region of interest depthmap values
-            for (idx = 0; idx < dm_indexes.size(); ++idx)
-            {
-                tmp_br1_table.push_back(br1_table[dm_indexes[idx]]);
-                tmp_br2_table.push_back(br2_table[dm_indexes[idx]]);
-                dm_values.push_back(depthmap_values[dm_indexes[idx]]);
-            }
+            //// fill in the tables for the region of interest depthmap values
+            //for (idx = 0; idx < dm_indexes.size(); ++idx)
+            //{
+            //    tmp_br1_table.push_back(br1_table[dm_indexes[idx]]);
+            //    tmp_br2_table.push_back(br2_table[dm_indexes[idx]]);
+            //    dm_values.push_back(depthmap_values[dm_indexes[idx]]);
+            //}
 
-            // check the foreground probability and fill in the tables
-            if (fg_x < prob_fg)
-            {
-                uint16_t dm = rng.uniform(0, fg_br_table.size());
-                tmp_br1_table.push_back(fg_br_table[dm].first);
-                tmp_br2_table.push_back(fg_br_table[dm].second);
-                //sigma_1 = sigma_table[bg_br_table[dm].first];
-                //sigma_2 = sigma_table[bg_br_table[dm].second];
-                dm_values.push_back(fg_dm.first);
-                //dm_values.insert(dm_values.begin(), )
-            }
+            //// check the foreground probability and fill in the tables
+            //if (fg_x < prob_fg)
+            //{
+            //    uint16_t dm = rng.uniform(0, fg_br_table.size());
+            //    tmp_br1_table.push_back(fg_br_table[dm].first);
+            //    tmp_br2_table.push_back(fg_br_table[dm].second);
+            //    //sigma_1 = sigma_table[bg_br_table[dm].first];
+            //    //sigma_2 = sigma_table[bg_br_table[dm].second];
+            //    dm_values.push_back(fg_dm.first);
+            //    //dm_values.insert(dm_values.begin(), )
+            //}
 
-            N = (uint32_t)(img_h * img_w * 0.001);
-            switch (dataset_type)
-            {
-            case 0:
-                generate_random_image(img_f1, rng, img_h, img_w, BN, 0.1);
-                break;
+            //N = (uint32_t)(img_h * img_w * 0.001);
+            //switch (dataset_type)
+            //{
+            //case 0:
+            //    generate_random_image(img_f1, rng, img_h, img_w, BN, 0.1);
+            //    break;
 
-            case 1:
-                img_f1 = cv::Mat(img_h, img_w, CV_8UC3);
-                sn_scale = sn_slope * dm_values[0] + sn_int;
-                create_color_map(img_h, img_w, sn_scale, octaves, persistence, wood.data(), img_f1.data);
-                break;
+            //case 1:
+            //    img_f1 = cv::Mat(img_h, img_w, CV_8UC3);
+            //    sn_scale = sn_slope * dm_values[0] + sn_int;
+            //    create_color_map(img_h, img_w, sn_scale, octaves, persistence, wood.data(), img_f1.data);
+            //    break;
 
-            case 2:
-                //img_f1 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0,0,0));
-                cv::hconcat(cv::Mat(img_h, img_w >> 1, CV_8UC3, cv::Scalar::all(0)), cv::Mat(img_h, img_w - (img_w >> 1), CV_8UC3, cv::Scalar::all(255)), img_f1);
-                break;
+            //case 2:
+            //    //img_f1 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0,0,0));
+            //    cv::hconcat(cv::Mat(img_h, img_w >> 1, CV_8UC3, cv::Scalar::all(0)), cv::Mat(img_h, img_w - (img_w >> 1), CV_8UC3, cv::Scalar::all(255)), img_f1);
+            //    break;
 
-            // black and white checkerboard
-            case 3:
-                generate_checkerboard(48, 48, img_w, img_h, img_f1);
-                break;
-            }
+            //// black and white checkerboard
+            //case 3:
+            //    generate_checkerboard(48, 48, img_w, img_h, img_f1);
+            //    break;
+            //}
 
-            // clone the images
-            img_f2 = img_f1.clone();
-
-
-            //cv::Mat img_f1_t = img_f1.clone();
-            //cv::Mat dst;
-            //dft_conv_rgb(img_f1_t, fft_blur_kernels[tmp_br1_table[0]], dst);
+            //// clone the images
+            //img_f2 = img_f1.clone();
 
 
-            // create gaussian kernel and blur imgs
-            //create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[0]], kernel);
-            //cv::filter2D(img_f1, img_f1, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
-            cv::filter2D(img_f1, img_f1, -1, blur_kernels[tmp_br1_table[0]], cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+            ////cv::Mat img_f1_t = img_f1.clone();
+            ////cv::Mat dst;
+            ////dft_conv_rgb(img_f1_t, fft_blur_kernels[tmp_br1_table[0]], dst);
 
-            //create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[0]], kernel);
-            //cv::filter2D(img_f2, img_f2, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
-            cv::filter2D(img_f2, img_f2, -1, blur_kernels[tmp_br2_table[0]], cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-            // create the initial depth map
-            cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
+            //// create gaussian kernel and blur imgs
+            ////create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[0]], kernel);
+            ////cv::filter2D(img_f1, img_f1, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+            //cv::filter2D(img_f1, img_f1, -1, blur_kernels[tmp_br1_table[0]], cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-            // blur imgs using dm_values and random masks
-            for (idx = 1; idx < dm_values.size(); ++idx)
-            {
-                f1_layer = img_f1.clone();
-                f2_layer = img_f2.clone();
+            ////create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[0]], kernel);
+            ////cv::filter2D(img_f2, img_f2, -1, kernel, cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
+            //cv::filter2D(img_f2, img_f2, -1, blur_kernels[tmp_br2_table[0]], cv::Point(-1, -1), 0.0, cv::BorderTypes::BORDER_REPLICATE);
 
-                // This part help shape the final distribution of depthmap values
-                //min_N = (int32_t)ceil((num_objects) / (1 + exp(-0.35 * dm_values[idx] + (0.035 * num_objects))) + 2);
-                //min_N = (int32_t)(num_objects / (double)(1.0 + exp(-0.1 * (depthmap_values[dm_indexes[idx]] - (max_dm_value-min_dm_value)/2.0))) + 5);
-                //min_N = (int32_t)ceil(((max_dm_value) / (double)(1.0 + exp(-0.35 * depthmap_values[dm_values[idx]] + (0.175 * max_dm_value)))) + 3);
-                min_N = (int32_t)ceil(((max_dm_value) / (double)(1.0 + exp(-0.365 * dm_values[idx] + (0.175 * max_dm_value)))) + 3);
-                max_N = (int32_t)ceil(2.0* min_N);  // 2.0
+            //// create the initial depth map
+            //cv::Mat depth_map(img_h, img_w, CV_8UC1, cv::Scalar::all(dm_values[0]));
 
-                N = rng.uniform(min_N, max_N + 1);
+            //// blur imgs using dm_values and random masks
+            //for (idx = 1; idx < dm_values.size(); ++idx)
+            //{
+            //    f1_layer = img_f1.clone();
+            //    f2_layer = img_f2.clone();
 
-                // define the scale factor
-                scale = 60.0 / (double)img_size.width;
+            //    // This part help shape the final distribution of depthmap values
+            //    //min_N = (int32_t)ceil((num_objects) / (1 + exp(-0.35 * dm_values[idx] + (0.035 * num_objects))) + 2);
+            //    //min_N = (int32_t)(num_objects / (double)(1.0 + exp(-0.1 * (depthmap_values[dm_indexes[idx]] - (max_dm_value-min_dm_value)/2.0))) + 5);
+            //    //min_N = (int32_t)ceil(((max_dm_value) / (double)(1.0 + exp(-0.35 * depthmap_values[dm_values[idx]] + (0.175 * max_dm_value)))) + 3);
+            //    min_N = (int32_t)ceil(((max_dm_value) / (double)(1.0 + exp(-0.365 * dm_values[idx] + (0.175 * max_dm_value)))) + 3);
+            //    max_N = (int32_t)ceil(2.0* min_N);  // 2.0
 
-                // 
-                switch (dataset_type)
-                {
-                case 0:
-                    generate_random_image(random_img, rng, img_h, img_w, BN, 0.1);
-                    break;
-                    
-                case 1:
-                    sn_scale = sn_slope * dm_values[idx] + sn_int;
-                    random_img = cv::Mat(img_h, img_w, CV_8UC3);
-                    create_color_map(img_h, img_w, sn_scale, octaves, persistence, wood.data(), random_img.data);
-                    break;
+            //    N = rng.uniform(min_N, max_N + 1);
 
-                case 2:
-                    cv::hconcat(cv::Mat(img_h, img_w >> 1, CV_8UC3, cv::Scalar::all(0)), cv::Mat(img_h, img_w - (img_w >> 1), CV_8UC3, cv::Scalar::all(255)), random_img);
-                    break;
-                }
+            //    // define the scale factor
+            //    scale = 60.0 / (double)img_size.width;
 
-                // generate random overlay
-                generate_random_overlay(random_img, rng, output_img, mask, N, scale);
+            //    // 
+            //    switch (dataset_type)
+            //    {
+            //    case 0:
+            //        generate_random_image(random_img, rng, img_h, img_w, BN, 0.1);
+            //        break;
+            //        
+            //    case 1:
+            //        sn_scale = sn_slope * dm_values[idx] + sn_int;
+            //        random_img = cv::Mat(img_h, img_w, CV_8UC3);
+            //        create_color_map(img_h, img_w, sn_scale, octaves, persistence, wood.data(), random_img.data);
+            //        break;
 
-                overlay_image(f1_layer, output_img, mask);
-                overlay_image(f2_layer, output_img, mask);
+            //    case 2:
+            //        cv::hconcat(cv::Mat(img_h, img_w >> 1, CV_8UC3, cv::Scalar::all(0)), cv::Mat(img_h, img_w - (img_w >> 1), CV_8UC3, cv::Scalar::all(255)), random_img);
+            //        break;
+            //    }
 
-                // overlay depthmap
-                //overlay_depthmap(depth_map, mask, depthmap_values[dm_indexes[idx]]);
-                overlay_depthmap(depth_map, mask, dm_values[idx]);
+            //    // generate random overlay
+            //    generate_random_overlay(random_img, rng, output_img, mask, N, scale);
 
-                // blur f1
-                //create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_indexes[idx]]], kernel);
-                //create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[idx]], kernel);
-                //blur_layer(f1_layer, img_f1, mask, kernel, rng);
-                blur_layer(f1_layer, img_f1, mask, blur_kernels[tmp_br1_table[idx]], rng);
+            //    overlay_image(f1_layer, output_img, mask);
+            //    overlay_image(f2_layer, output_img, mask);
 
-                // blur f2
-                //create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_indexes[idx]]], kernel);
-                //create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[idx]], kernel);
-                //blur_layer(f2_layer, img_f2, mask, kernel, rng);
-                blur_layer(f2_layer, img_f2, mask, blur_kernels[tmp_br2_table[idx]], rng);
-            }
+            //    // overlay depthmap
+            //    //overlay_depthmap(depth_map, mask, depthmap_values[dm_indexes[idx]]);
+            //    overlay_depthmap(depth_map, mask, dm_values[idx]);
+
+            //    // blur f1
+            //    //create_gaussian_kernel(kernel_size, sigma_table[br1_table[dm_indexes[idx]]], kernel);
+            //    //create_gaussian_kernel(kernel_size, sigma_table[tmp_br1_table[idx]], kernel);
+            //    //blur_layer(f1_layer, img_f1, mask, kernel, rng);
+            //    blur_layer(f1_layer, img_f1, mask, blur_kernels[tmp_br1_table[idx]], rng);
+
+            //    // blur f2
+            //    //create_gaussian_kernel(kernel_size, sigma_table[br2_table[dm_indexes[idx]]], kernel);
+            //    //create_gaussian_kernel(kernel_size, sigma_table[tmp_br2_table[idx]], kernel);
+            //    //blur_layer(f2_layer, img_f2, mask, kernel, rng);
+            //    blur_layer(f2_layer, img_f2, mask, blur_kernels[tmp_br2_table[idx]], rng);
+            //}
+
+            
+            img_f1 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0));
+            img_f2 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0));
+            depth_map = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));
+            generate_scene(img_w, img_h, img_f1.ptr<uint8_t>(0), img_f2.ptr<uint8_t>(0), depth_map.ptr<uint8_t>(0));
+
 
             // if the platform is an HPC platform then don't display anything
             if (!HPC)
@@ -506,22 +519,22 @@ int main(int argc, char** argv)
                 cv::waitKey(10);
             }
 
-            std::string f1_filename = "images/" + scenario_name + num2str<int>(jdx, "image_f1_%04i.png");
-            std::string f2_filename = "images/" + scenario_name + num2str<int>(jdx, "image_f2_%04i.png");
-            std::string dmap_filename = "depth_maps/" + scenario_name + num2str<int>(jdx, "dm_%04i.png");
+            //std::string f1_filename = "images/" + scenario_name + num2str<int>(jdx, "image_f1_%04i.png");
+            //std::string f2_filename = "images/" + scenario_name + num2str<int>(jdx, "image_f2_%04i.png");
+            //std::string dmap_filename = "depth_maps/" + scenario_name + num2str<int>(jdx, "dm_%04i.png");
 
-            cv::imwrite(save_location + f1_filename, img_f1);
-            cv::imwrite(save_location + f2_filename, img_f2);
-            cv::imwrite(save_location + dmap_filename, depth_map);
+            //cv::imwrite(save_location + f1_filename, img_f1);
+            //cv::imwrite(save_location + f2_filename, img_f2);
+            //cv::imwrite(save_location + dmap_filename, depth_map);
 
-            std::cout << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
-            std::cout << dm_values << std::endl;
+            //std::cout << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
+            //std::cout << dm_values << std::endl;
 
-            param_stream << "image " << num2str<int>(jdx, "%03d: ") << dm_values << std::endl;
-            param_stream << "           " << tmp_br1_table << std::endl;
-            param_stream << "           " << tmp_br2_table << std::endl;
+            //param_stream << "image " << num2str<int>(jdx, "%03d: ") << dm_values << std::endl;
+            //param_stream << "           " << tmp_br1_table << std::endl;
+            //param_stream << "           " << tmp_br2_table << std::endl;
 
-            DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
+            //DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
 
         } // end of for loop
 

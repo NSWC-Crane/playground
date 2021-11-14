@@ -51,7 +51,9 @@ void get_platform(std::string& platform)
 
 //-----------------------------------------------------------------------------
 void read_blur_params(std::string param_filename,
-    std::string &scenario_name,
+    std::string& scenario_name,
+    std::string& blur_param_file, 
+    /*
     std::pair<uint8_t, double>& bg_dm,
     std::pair<uint8_t, double>& fg_dm,
     std::vector<std::pair<uint8_t, uint8_t>> &bg_br_table,
@@ -68,9 +70,10 @@ void read_blur_params(std::string param_filename,
     double& refractive_index_min,
     double& refractive_index_max,
     uint8_t &dataset_type,
+    */
     uint32_t &img_h, uint32_t &img_w,
-    int32_t &max_dm_num,
-    uint32_t &num_objects,
+    //int32_t &max_dm_num,
+    //uint32_t &num_objects,
     uint32_t &num_images,
     std::string &save_location
 )
@@ -88,80 +91,83 @@ void read_blur_params(std::string param_filename,
                 scenario_name = params[idx][0];
                 break;
 
-            // #1 background blur radius values, br1,br2, br1,br2,... 
             case 1:
-                try {
-                    //bg_dm_value = (uint8_t)std::stoi(params[idx][0]);
-                    bg_dm = std::make_pair((uint8_t)std::stoi(params[idx][0]), std::stod(params[idx][1]));
-                    for (jdx = 2; jdx < params[idx].size(); jdx += 2)
-                    {
-                        bg_br_table.push_back(std::make_pair((uint8_t)std::stoi(params[idx][jdx]), (uint8_t)std::stoi(params[idx][jdx + 1])));
-                    }
-                }
-                catch (...)
-                {
-                    throw std::runtime_error("Error parsing line 0 - index: " + std::to_string(jdx));
-                }
-                break;
-            // #2 foreground blur radius values, br1,br2, br1,br2,...  
-            case 2:
-                try {
-                    //fg_dm_value = (uint8_t)std::stoi(params[idx][0]);
-                    fg_dm = std::make_pair((uint8_t)std::stoi(params[idx][0]), std::stod(params[idx][1]));
-                    for (jdx = 2; jdx < params[idx].size(); jdx += 2)
-                    {
-                        fg_br_table.push_back(std::make_pair((uint8_t)std::stoi(params[idx][jdx]), (uint8_t)std::stoi(params[idx][jdx + 1])));
-                    }
-                }
-                catch (...)
-                {
-                    throw std::runtime_error("Error parsing line 1 - index: " + std::to_string(jdx));
-                }
-                break;
-            // #3 ROI depthmap values 
-            case 3:
-                for (jdx = 0; jdx < params[idx].size(); ++jdx)
-                {
-                    depthmap_values.push_back((uint8_t)std::stoi(params[idx][jdx]));
-                }
-                break;
-            // #4 sigma values, the number of values should be greater than the number of depthmap values, DM values are used to index sigma values
-            case 4:
-                for (jdx = 0; jdx < params[idx].size(); ++jdx)
-                {
-                    sigma_table.push_back(std::stod(params[idx][jdx]));
-                }
-                break;
-            // #5 blur radius table 1, the number of values should match the number of depthmap values
-            case 5:
-                for (jdx = 0; jdx < params[idx].size(); ++jdx)
-                {
-                    br1_table.push_back((uint8_t)std::stod(params[idx][jdx]));
-                }
-                break;
-            // #6 blur radius table 2, the number of values should match the number of depthmap values
-            case 6:
-                for (jdx = 0; jdx < params[idx].size(); ++jdx)
-                {
-                    br2_table.push_back((uint8_t)std::stod(params[idx][jdx]));
-                }
-                break;
-            // #7 dataset type: 0 -> random image, 1 -> other
-            case 7:
-                aperture = (uint8_t)std::stoi(params[idx][0]);
-                slope = (uint16_t)std::stoi(params[idx][1]);
-                intercept = (uint16_t)std::stoi(params[idx][2]);
-                wavelength_min = (uint32_t)std::stoi(params[idx][3]);
-                wavelength_max = (uint32_t)std::stoi(params[idx][4]);
-                refractive_index_min = std::stod(params[idx][5]);
-                refractive_index_max = std::stod(params[idx][6]);
-                break;
-            // #8 dataset type: 0 -> random image, 1 -> other
-            case 8:
-                dataset_type = (uint8_t)std::stoi(params[idx][0]);
-                break;
+                blur_param_file = params[idx][0];
+
+            //// #1 background blur radius values, br1,br2, br1,br2,... 
+            //case 1:
+            //    try {
+            //        //bg_dm_value = (uint8_t)std::stoi(params[idx][0]);
+            //        bg_dm = std::make_pair((uint8_t)std::stoi(params[idx][0]), std::stod(params[idx][1]));
+            //        for (jdx = 2; jdx < params[idx].size(); jdx += 2)
+            //        {
+            //            bg_br_table.push_back(std::make_pair((uint8_t)std::stoi(params[idx][jdx]), (uint8_t)std::stoi(params[idx][jdx + 1])));
+            //        }
+            //    }
+            //    catch (...)
+            //    {
+            //        throw std::runtime_error("Error parsing line 0 - index: " + std::to_string(jdx));
+            //    }
+            //    break;
+            //// #2 foreground blur radius values, br1,br2, br1,br2,...  
+            //case 2:
+            //    try {
+            //        //fg_dm_value = (uint8_t)std::stoi(params[idx][0]);
+            //        fg_dm = std::make_pair((uint8_t)std::stoi(params[idx][0]), std::stod(params[idx][1]));
+            //        for (jdx = 2; jdx < params[idx].size(); jdx += 2)
+            //        {
+            //            fg_br_table.push_back(std::make_pair((uint8_t)std::stoi(params[idx][jdx]), (uint8_t)std::stoi(params[idx][jdx + 1])));
+            //        }
+            //    }
+            //    catch (...)
+            //    {
+            //        throw std::runtime_error("Error parsing line 1 - index: " + std::to_string(jdx));
+            //    }
+            //    break;
+            //// #3 ROI depthmap values 
+            //case 3:
+            //    for (jdx = 0; jdx < params[idx].size(); ++jdx)
+            //    {
+            //        depthmap_values.push_back((uint8_t)std::stoi(params[idx][jdx]));
+            //    }
+            //    break;
+            //// #4 sigma values, the number of values should be greater than the number of depthmap values, DM values are used to index sigma values
+            //case 4:
+            //    for (jdx = 0; jdx < params[idx].size(); ++jdx)
+            //    {
+            //        sigma_table.push_back(std::stod(params[idx][jdx]));
+            //    }
+            //    break;
+            //// #5 blur radius table 1, the number of values should match the number of depthmap values
+            //case 5:
+            //    for (jdx = 0; jdx < params[idx].size(); ++jdx)
+            //    {
+            //        br1_table.push_back((uint8_t)std::stod(params[idx][jdx]));
+            //    }
+            //    break;
+            //// #6 blur radius table 2, the number of values should match the number of depthmap values
+            //case 6:
+            //    for (jdx = 0; jdx < params[idx].size(); ++jdx)
+            //    {
+            //        br2_table.push_back((uint8_t)std::stod(params[idx][jdx]));
+            //    }
+            //    break;
+            //// #7 dataset type: 0 -> random image, 1 -> other
+            //case 7:
+            //    aperture = (uint8_t)std::stoi(params[idx][0]);
+            //    slope = (uint16_t)std::stoi(params[idx][1]);
+            //    intercept = (uint16_t)std::stoi(params[idx][2]);
+            //    wavelength_min = (uint32_t)std::stoi(params[idx][3]);
+            //    wavelength_max = (uint32_t)std::stoi(params[idx][4]);
+            //    refractive_index_min = std::stod(params[idx][5]);
+            //    refractive_index_max = std::stod(params[idx][6]);
+            //    break;
+            //// #8 dataset type: 0 -> random image, 1 -> other
+            //case 8:
+            //    dataset_type = (uint8_t)std::stoi(params[idx][0]);
+            //    break;
             // #9 image size: height, width
-            case 9:
+            case 2:
                 try
                 {
                     img_h = (uint32_t)std::stoi(params[idx][0]);
@@ -173,20 +179,20 @@ void read_blur_params(std::string param_filename,
                     img_w = 512;
                 }
                 break;
-            // #10 maximum number of depthmap values within a single image
-            case 10:
-                max_dm_num = (int32_t)std::stoi(params[idx][0]);
-                break;
-            // #11 starting number of objects in the farthest layer
-            case 11:
-                num_objects = (uint32_t)std::stoi(params[idx][0]);
-                break;
+            //// #10 maximum number of depthmap values within a single image
+            //case 10:
+            //    max_dm_num = (int32_t)std::stoi(params[idx][0]);
+            //    break;
+            //// #11 starting number of objects in the farthest layer
+            //case 11:
+            //    num_objects = (uint32_t)std::stoi(params[idx][0]);
+            //    break;
             // #12 number of images to generate
-            case 12:
+            case 3:
                 num_images = (uint32_t)std::stoi(params[idx][0]);
                 break;
             // #13 save location
-            case 13:
+            case 4:
                 save_location = params[idx][0];
                 break;
             default:

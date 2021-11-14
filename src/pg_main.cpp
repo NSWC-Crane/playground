@@ -45,19 +45,6 @@ typedef void* HINSTANCE;
 
 #include <vs_gen_lib.h>
 
-//template<typename T>
-//bool comp_pair(T fisrt, T second)
-//{
-//    return first < second;
-//}
-
-
-// ----------------------------------------------------------------------------------------
-//bool compare(std::pair<uint8_t, uint8_t> p1, std::pair<uint8_t, uint8_t> p2)
-//{
-//    return max(p1.first, p1.second) < max(p2.first, p2.second);
-//}
-
 // ----------------------------------------------------------------------------------------
 inline std::ostream& operator<<(std::ostream& out, std::vector<uint8_t>& item)
 {
@@ -141,6 +128,8 @@ int main(int argc, char** argv)
     //uint32_t BN = 1000;
     std::string window_name = "montage";
 
+    std::string blur_param_file;
+
     //uint8_t bg_dm_value;
     //uint8_t fg_dm_value;
     std::string scenario_name;
@@ -211,9 +200,11 @@ int main(int argc, char** argv)
     }
 
     std::string param_filename = argv[1];
-    read_blur_params(param_filename, scenario_name, bg_dm, fg_dm, bg_br_table, fg_br_table, depthmap_values, sigma_table,
-        br1_table, br2_table, aperture, slope, intercept, wavelength_min, wavelength_max, refractive_index_min, refractive_index_max,
-        dataset_type, img_h, img_w, max_dm_num, num_objects, num_images, save_location);
+    //read_blur_params(param_filename, scenario_name, bg_dm, fg_dm, bg_br_table, fg_br_table, depthmap_values, sigma_table,
+    //    br1_table, br2_table, aperture, slope, intercept, wavelength_min, wavelength_max, refractive_index_min, refractive_index_max,
+    //    dataset_type, img_h, img_w, max_dm_num, num_objects, num_images, save_location);
+
+    read_blur_params(param_filename, scenario_name, blur_param_file, img_h, img_w, num_images, save_location);
 
     //uint16_t min_dm_value = fg_dm.first;        // depthmap_values.front();
     //uint16_t max_dm_value = bg_dm.first;        // depthmap_values.back();
@@ -252,6 +243,7 @@ int main(int argc, char** argv)
     // save the parameters that were used to generate the dataset
     std::ofstream param_stream(save_location + scenario_name + "parameters.txt", std::ofstream::out);
     param_stream << "# Parameters used to generate the dataset" << std::endl;
+/*
     param_stream << depthmap_values << std::endl;
     param_stream << sigma_table << std::endl;
     param_stream << br1_table << std::endl;
@@ -276,6 +268,7 @@ int main(int argc, char** argv)
     std::cout << "# of Objects:     " << num_objects << std::endl;
     std::cout << "# of Images:      " << num_images << std::endl;
     std::cout << "------------------------------------------------------------------" << std::endl << std::endl;
+*/
 
     // if the platform is an HPC platform then don't display anything
     if (!HPC)
@@ -332,11 +325,15 @@ int main(int argc, char** argv)
         
         std::cout << "Data Directory: " << save_location << std::endl;
 
-        init(sigma_table.size(), sigma_table.data(), depthmap_values.size(), depthmap_values.data(),
-            br1_table.data(), br2_table.data(), bg_br_table.size(), (void*)bg_br_table.data(), fg_br_table.size(), (void*)fg_br_table.data(),
-            fg_dm.second, bg_dm.second, fg_dm.first, bg_dm.first, max_dm_num);
+        init_from_file(blur_param_file.c_str());
+
+        //init(sigma_table.size(), sigma_table.data(), depthmap_values.size(), depthmap_values.data(),
+        //    br1_table.data(), br2_table.data(), bg_br_table.size(), (void*)bg_br_table.data(), fg_br_table.size(), (void*)fg_br_table.data(),
+        //    fg_dm.second, bg_dm.second, fg_dm.first, bg_dm.first, max_dm_num);
 
         start_time = chrono::system_clock::now();
+
+        double scale = 0.1;
 
         for (jdx = 0; jdx < num_images; ++jdx)
         {
@@ -344,7 +341,7 @@ int main(int argc, char** argv)
             img_f1 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0));
             img_f2 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0));
             depth_map = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));
-            generate_scene(img_w, img_h, img_f1.ptr<uint8_t>(0), img_f2.ptr<uint8_t>(0), depth_map.ptr<uint8_t>(0));
+            generate_scene(scale, img_w, img_h, img_f1.ptr<uint8_t>(0), img_f2.ptr<uint8_t>(0), depth_map.ptr<uint8_t>(0));
 
 
             // if the platform is an HPC platform then don't display anything

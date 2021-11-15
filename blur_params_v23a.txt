@@ -32,5 +32,3 @@
 
 #8 dataset type: 0 -> random image, 1 -> other, 2-> knife edge
 #1
-
-

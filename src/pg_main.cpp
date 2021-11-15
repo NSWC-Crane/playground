@@ -149,15 +149,15 @@ int main(int argc, char** argv)
     std::vector<double> sigma_table;
     std::vector<uint8_t> br1_table, tmp_br1_table;
     std::vector<uint8_t> br2_table, tmp_br2_table;
-    uint8_t aperture;
-    uint16_t slope;
-    uint16_t intercept;
-    uint32_t wavelength_min;
-    uint32_t wavelength_max;
-    double refractive_index_min;
-    double refractive_index_max;
+    //uint8_t aperture;
+    //uint16_t slope;
+    //uint16_t intercept;
+    //uint32_t wavelength_min;
+    //uint32_t wavelength_max;
+    //double refractive_index_min;
+    //double refractive_index_max;
+    //int32_t max_dm_num;
     uint8_t dataset_type;
-    int32_t max_dm_num;
     uint32_t num_objects;
     uint32_t num_images;
     std::string save_location;
@@ -389,14 +389,14 @@ int main(int argc, char** argv)
     }
 
 
-    if (dataset_type == 1)
-    {
-#if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
-        FreeLibrary(simplex_noise_lib);
-#else
-        dlclose(simplex_noise_lib);
-#endif
-    }
+//    if (dataset_type == 1)
+//    {
+//#if defined(_WIN32) | defined(__WIN32__) | defined(__WIN32) | defined(_WIN64) | defined(__WIN64)
+//        FreeLibrary(simplex_noise_lib);
+//#else
+//        dlclose(simplex_noise_lib);
+//#endif
+//    }
 
 
     std::cout << "End of Program.  Press Enter to close..." << std::endl;

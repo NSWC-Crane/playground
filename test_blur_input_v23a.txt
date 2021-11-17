@@ -49,4 +49,4 @@ D:/Projects/playground/blur_params_v23a.txt
 50
 
 #4 save location
-d:/data/dfd/tb23a_wood/
+d:/data/dfd/tb23a_dyn/

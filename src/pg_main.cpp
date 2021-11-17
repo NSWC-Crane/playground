@@ -356,9 +356,9 @@ int main(int argc, char** argv)
             std::string f2_filename = "images/" + scenario_name + num2str<int>(jdx, "image_f2_%04i.png");
             std::string dmap_filename = "depth_maps/" + scenario_name + num2str<int>(jdx, "dm_%04i.png");
 
-            //cv::imwrite(save_location + f1_filename, img_f1);
-            //cv::imwrite(save_location + f2_filename, img_f2);
-            //cv::imwrite(save_location + dmap_filename, depth_map);
+            cv::imwrite(save_location + f1_filename, img_f1);
+            cv::imwrite(save_location + f2_filename, img_f2);
+            cv::imwrite(save_location + dmap_filename, depth_map);
 
             std::cout << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
             
@@ -369,7 +369,7 @@ int main(int argc, char** argv)
             //param_stream << "           " << tmp_br1_table << std::endl;
             //param_stream << "           " << tmp_br2_table << std::endl;
 
-            //DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
+            DataLog_Stream << f1_filename << ", " << f2_filename << ", " << dmap_filename << std::endl;
 
         } // end of for loop
 

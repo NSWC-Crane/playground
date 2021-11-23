@@ -325,11 +325,13 @@ int main(int argc, char** argv)
         
         std::cout << "Data Directory: " << save_location << std::endl;
 
-        init_from_file(blur_param_file.c_str());
+        init_vs_gen_from_file(blur_param_file.c_str());
 
         //init(sigma_table.size(), sigma_table.data(), depthmap_values.size(), depthmap_values.data(),
         //    br1_table.data(), br2_table.data(), bg_br_table.size(), (void*)bg_br_table.data(), fg_br_table.size(), (void*)fg_br_table.data(),
         //    fg_dm.second, bg_dm.second, fg_dm.first, bg_dm.first, max_dm_num);
+
+        set_vs_seed(1637673143);
 
         start_time = chrono::system_clock::now();
 
@@ -341,7 +343,7 @@ int main(int argc, char** argv)
             img_f1 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0));
             img_f2 = cv::Mat(img_h, img_w, CV_8UC3, cv::Scalar::all(0));
             depth_map = cv::Mat(img_h, img_w, CV_8UC1, cv::Scalar::all(0));
-            generate_scene(scale, img_w, img_h, img_f1.ptr<uint8_t>(0), img_f2.ptr<uint8_t>(0), depth_map.ptr<uint8_t>(0));
+            generate_vs_scene(scale, img_w, img_h, img_f1.ptr<uint8_t>(0), img_f2.ptr<uint8_t>(0), depth_map.ptr<uint8_t>(0));
 
 
             // if the platform is an HPC platform then don't display anything

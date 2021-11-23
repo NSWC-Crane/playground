@@ -4,7 +4,7 @@
 tb23a_
 
 #1 blur parameters file:
-D:/Projects/playground/blur_params_v23a.txt
+../blur_params_v23a.txt
 
 #1 background: depthmap value, probablility, blur radius values - br1, br2, br1, br2,... 
 # 81,82,83,84,85
@@ -49,4 +49,4 @@ D:/Projects/playground/blur_params_v23a.txt
 50
 
 #4 save location
-d:/data/dfd/tb23a_dyn/
+E:/data/dfd/tb23a_dyn/

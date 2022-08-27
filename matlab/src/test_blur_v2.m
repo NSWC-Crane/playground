@@ -57,6 +57,9 @@ for idx=1:numel(listing)
         img = double(img);
     end
     
+    % rotate the images
+    img = imrotate(img, 270);
+    
     if(idx == 1)
         figure(1)
         imshow(uint8(img))
@@ -70,10 +73,10 @@ for idx=1:numel(listing)
     
     % find the average of each column in the subset
     % img_line = mean(img_s, 1);
+    num2 = [];
     
     for row=1:size(img_s, 1)
-        num2 = [];
-        
+                
         img_line = img_s(row, :);
         
         % find the 'x' center of the image
@@ -99,8 +102,13 @@ for idx=1:numel(listing)
         end
 
         %%% new code here %%%
-        [line_min, min_idx] = min(img_line);
-        img_line = img_line(max(min_idx-100, 1):1:min_idx+100);
+        %[line_min, min_idx] = min(img_line);
+        
+        % get the image limits
+%         max_idx = min(min_idx+100, size(img_line,2));
+%         min_idx = max(1, min_idx-100);
+%         
+%         img_line = img_line(min_idx:1:max_idx);
         %%% end of new coder here %%%
 
         % find the areas where limits are met
@@ -163,13 +171,14 @@ for idx=1:numel(listing)
         %num = sum(match);
 
         % find the mean of the lines 30 pixels from the match
-        mn2 = floor(mean(img_line(min_ex-10:min_ex-1)) + 0.5);
-        mx2 = floor(mean(img_line(max_ex+1:max_ex+10)) + 0.5);
+        % need to make sure that we don't go out of bounds on the arrays
+        mn2 = floor(mean(img_line(max(1, min_ex-10):max(1,min_ex-1))) + 0.5);
+        mx2 = floor(mean(img_line(min(max_ex+1, numel(img_line)):min(max_ex+10, numel(img_line)))) + 0.5);
 
         % run through the matches a second time and try to refine the match 
         % TODO: this might break if the knife edge is low->high!!!
         % find min_ex2
-        for jdx=min_ex:-1:min_ex-30
+        for jdx=min_ex:-1:max(1, min_ex-30)
             if(img_line(jdx) >= mn2)
                 break;
             end
@@ -177,7 +186,7 @@ for idx=1:numel(listing)
         min_ex2 = jdx+1;
 
         % find max_ex2
-        for jdx=max_ex:1:max_ex+30
+        for jdx=max_ex:1:min(max_ex+30, numel(img_line))
             if(img_line(jdx) <= mx2)
                 break;
             end

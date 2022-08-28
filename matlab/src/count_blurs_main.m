@@ -137,7 +137,7 @@ for idx=30:numel(listing)
             
             % crop the line based on what was previously found and make the
             % direction high -> low
-            img_line = img_line(max_start:-1:min_start);
+            img_line = img_line(min_start:-1:max_start);
             
         else
             
@@ -218,7 +218,7 @@ for idx=30:numel(listing)
             if(count >= 4)
                 break;
             end
-            low_limit = low_limit - 1;            
+%             low_limit = low_limit - 1;            
         end
         
         % find the initial match
@@ -274,5 +274,5 @@ for idx=30:numel(listing)
     pause(1)
 end    
     
-fprintf('-----------------------------------------------------\n')
+fprintf('--------------------------------------------------------\n')
 

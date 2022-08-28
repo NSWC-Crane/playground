@@ -23,6 +23,8 @@ listing = dir(strcat(img_path, '/', image_ext));
 
 save_dir = img_path;
 
+fprintf('Image Path: %s\n\n', img_path);
+
 %% run through each image in the list
 commandwindow;
 
@@ -42,10 +44,12 @@ fx = [1 -2 1];
 
 % this is a value to provide a small buffer to exceed before being counted
 offset = 1/255;
-    
-fprintf('File Name\t\t\t\t# of Pixels Blurred\n')
-fprintf('-----------------------------------------------------\n')
-for idx=1:numel(listing)
+
+%% start running through images
+fprintf('File Name\t\t\t\t\t\t\t\t# of Pixels Blurred\n')
+fprintf('--------------------------------------------------------\n')
+first = true;
+for idx=30:numel(listing)
 
     % load in an image and get its size
     % img_file = fullfile(listing(idx).folder, listing(idx).name);
@@ -63,10 +67,14 @@ for idx=1:numel(listing)
     img = imrotate(img, 270);
     
     figure(1)
-    imshow(uint8(img))
-        
-    if(idx == 1)
+    set(gcf,'position',([100,100,1500,600]),'color','w')
+    subplot(1,3,1);
+    image(uint8(img));
+    colormap(jet(256));
+    
+    if(first)
         [slice_col, slice_row, ~] = ginput(1);
+        first = false;
     end
 
     % find the rough center points assuming that the knife edge is vertical
@@ -75,12 +83,16 @@ for idx=1:numel(listing)
     img_s = img(floor([slice_row - img_offset, slice_row, slice_row + img_offset]),:);
     
     % find the 'x' center of the image
-    img_cw = floor(img_w/2);    
+    %img_cw = floor(img_w/2);
+       
+    subplot(1,3,2);
+    mesh(img_s);
+    view(10, 10);    
     
     % find the average of each column in the subset
-    % img_line = mean(img_s, 1);
- 
-    %% run through each row and find the best pixel count
+    img_s = mean(img_s, 1);
+    
+    % run through each row and find the best pixel count
     num2 = zeros(1, size(img_s, 1));
     
     for row=1:size(img_s, 1)
@@ -111,17 +123,17 @@ for idx=1:numel(listing)
         
         if(direction == 1)
             
-            % check for upwards curve and cut at the min index
-            curve_check = sum(img_line(1:min_idx) > img_line(min_idx)) > 0;
-            if(curve_check == true)
-                min_start = min_idx;
-            end
-            
-            % check for downwards curve and cut at the max index
-            curve_check = sum(img_line(max_idx:end) < img_line(max_idx)) > 0;
-            if(curve_check == true)
-                max_start = max_idx;
-            end
+%             % check for upwards curve and cut at the min index
+%             curve_check = sum(img_line(1:min_idx) > img_line(min_idx)) > 0;
+%             if(curve_check == true)
+%                 min_start = min_idx;
+%             end
+%             
+%             % check for downwards curve and cut at the max index
+%             curve_check = sum(img_line(max_idx:end) < img_line(max_idx)) > 0;
+%             if(curve_check == true)
+%                 max_start = max_idx;
+%             end
             
             % crop the line based on what was previously found and make the
             % direction high -> low
@@ -129,17 +141,17 @@ for idx=1:numel(listing)
             
         else
             
-            % check for upwards curve and cut at the min index
-            curve_check = sum(img_line(min_idx:end) > img_line(min_idx)) > 0;
-            if(curve_check == true)
-                min_start = min_idx;
-            end
-            
-            % check for downwards curve and cut at the max index
-            curve_check = sum(img_line(1:max_idx) < img_line(max_idx)) > 0;
-            if(curve_check == true)
-                max_start = max_idx;
-            end           
+%             % check for upwards curve and cut at the min index
+%             curve_check = sum(img_line(min_idx:end) > img_line(min_idx)) > 0;
+%             if(curve_check == true)
+%                 min_start = min_idx;
+%             end
+%             
+%             % check for downwards curve and cut at the max index
+%             curve_check = sum(img_line(1:max_idx) < img_line(max_idx)) > 0;
+%             if(curve_check == true)
+%                 max_start = max_idx;
+%             end           
             
             % crop the line based on what was previously found
             img_line = img_line(max_start:min_start);
@@ -147,10 +159,12 @@ for idx=1:numel(listing)
         end
        
         % find the index of a point close to the mid_line value
-        [~, min_idx] = min(img_line);
-        [~, max_idx] = max(img_line);
-        mid_idx = floor((max_idx + min_idx)/2);
-        mid_line = img_line(mid_idx);
+%         [~, min_idx] = min(img_line);
+%         [~, max_idx] = max(img_line);
+%         mid_idx = floor((max_idx + min_idx)/2);
+%         mid_line = img_line(mid_idx);
+        mid_line = (max_line-min_line)/2 + min_line;
+        mid_idx = find(img_line < mid_line, 1, 'first');
         
         %split the ranges in the middle
         x1 = 2:mid_idx;
@@ -159,247 +173,106 @@ for idx=1:numel(listing)
         % smooth the img_line to get the rough values
         img_line_s = conv(img_line, sk, 'same');
         
-        % find the lower limit
-        count = 0;
-        low_limit = mid_line;
-        while((low_limit>min_line) && (count < 8))
-
-            r = (img_line_s(x2) > (low_limit-0.25)) & (img_line_s(x2) < (low_limit+0.25));
-            count = sum(r);
-
-            low_limit = low_limit - 0.25;
-        end
-        low_limit = low_limit + 0.25;
-
-        % find the high limit
+        % find the high limit 
         figure(201)
         count = 0;
-        high_limit = mid_line;
-        while((high_limit < max_line) && (count < 8))
+        for jdx=mid_idx:-1:21
+            high_limit = img_line(jdx);
+            
             plot(img_line(x1),'b');
             hold on;
             plot(img_line_s(x1),'g');
-            r = (img_line(x1) > (high_limit-0.25)) & (img_line(x1) < (high_limit+0.25));
+            tmp_line = img_line_s(jdx:-1:jdx-20);
+            r = ((tmp_line) > (high_limit-1)) & (tmp_line < (high_limit+1));
+        
             count = sum(r);
 
-            high_limit = high_limit + 0.25;
-            
-            stem(r*max_line, 'r');
+            stem(jdx:-1:jdx-20, r*max_line, 'r');
             hold off;
-            %pause(0.1);
             drawnow;
+            
+            if(count >= 4)
+                break;
+            end
+            %high_limit = high_limit + 1;
+      
         end
-        high_limit = high_limit - 0.25;
+        
+        
+%         figure(202)
+        count = 0;
+        for jdx=mid_idx:numel(img_line) - 21
+            low_limit = img_line(jdx);
+%             plot(img_line(x2),'b');
+%             hold on;
+%             plot(img_line_s(x2),'g');
+            tmp_line = img_line_s(jdx:jdx+20);            
+            r = ((tmp_line) > (low_limit-1)) & (tmp_line < (low_limit+1));
+            
+            count = sum(r);
 
-
+%             stem((jdx:jdx+20)-mid_idx, r*max_line, 'r');
+%             hold off;
+%             drawnow;
+            
+            if(count >= 4)
+                break;
+            end
+            low_limit = low_limit - 1;            
+        end
+        
         % find the initial match
-        [match, num, min_ex, max_ex] = find_match(img_line, low_limit, high_limit, mid_idx);        
+        [match, num, min_idx2, max_idx2] = find_match(img_line, low_limit, high_limit, mid_idx);        
        
         % find the mean of the lines 30 pixels from the match
         % need to make sure that we don't go out of bounds on the arrays
-        mn2 = floor(mean(img_line(max(1, min_ex-10):max(1,min_ex-1))) + 0.5);
-        mx2 = floor(mean(img_line(min(max_ex+1, numel(img_line)):min(max_ex+10, numel(img_line)))) + 0.5);
+%         min_mean = floor(mean(img_line(max(1, min_idx2-10):max(1,min_idx2-1))) + 0.5);
+%         max_mean = floor(mean(img_line(min(max_idx2+1, numel(img_line)):min(max_idx2+10, numel(img_line)))) + 0.5);       
+        min_mean = ceil(mean(img_line(min_idx2:min(min_idx2+30, numel(img_line)))));
+        max_mean = floor(mean(img_line(max_idx2:-1:max(1, max_idx2-30))));
 
         % run through the matches a second time and try to refine the match
-        for jdx=min_ex:-1:max(1, min_ex-30)
-            if(img_line(jdx) >= mn2)
+        for jdx=min_idx2:-1:(min_idx2-30)
+            if(img_line(jdx) > min_mean)
                 break;
             end
         end
-        min_ex2 = jdx+1;
+        min_ex2 = jdx;
 
         % find max_ex2
-        for jdx=max_ex:1:min(max_ex+30, numel(img_line))
-            if(img_line(jdx) <= mx2)
+        for jdx=max_idx2:1:(max_idx2+30)
+            if(img_line(jdx) < max_mean)
                 break;
             end
         end
         max_ex2 = jdx;
 
-        num2(row) = max_ex2 - min_ex2;        
+        num2(row) = min_ex2 - max_ex2;        
                
     end
     
     
     fprintf('%03d: %s, \t%03d,\t%03d\n', (idx-1), listing(idx).name, num, floor(mean(num2)));
         
-    figure(2)
+    figure(1)
+    subplot(1,3,3);
     plot(img_line, '.-b');
     %stairs(floor(img_line), '.-b');
     
     hold on;
-    stem([min_ex max_ex], [1 1]*max(img_line(:)), 'Color', 'r', 'Marker', '.');
-    stem([min_ex2 max_ex2], [1 1]*max(img_line(:)), 'Color', 'g', 'Marker', '.');
+    plot(img_line_s, '--k');
+    stem([max_idx2 min_idx2], [1 1]*max(img_line(:)), 'Color', 'r', 'Marker', '.');
+    stem([max_ex2 min_ex2], [1 1]*max(img_line(:)), 'Color', 'g', 'Marker', '.');
 
     plot(low_limit*ones(size(img_line)), '--r');
     plot(high_limit*ones(size(img_line)), '--r');
     
-    plot(mn2*ones(size(img_line)), '--g');
-    plot(mx2*ones(size(img_line)), '--g');
+    plot(min_mean*ones(size(img_line)), '--g');
+    plot(max_mean*ones(size(img_line)), '--g');
     hold off;
 
-    figure(3)
-    mesh(img_s);
-    view(10, 10);    
-    
- %%   
+    pause(1)
 end    
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    %% old
-%     num2 = [];
-%     
-%     for row=1:size(img_s, 1)
-%                 
-%         img_line = img_s(row, :);
-%         
-%         % find the 'x' center of the image
-%         img_cw = floor(img_w/2);
-% 
-%         % crop out the edges and only concentrate on the knife edge, assuming
-%         % the knife edge is in the center of the image
-%         width_range = max(2,img_cw-max_blur_radius):1:min(img_w-1,img_cw+max_blur_radius);
-% 
-%         % just use a single line to determine the blur amount
-%         %img_line = conv(img_line, sk, 'same');
-%         %img_line = movmean(img_line, 2);
-%         % floor the average to help reduce noise
-%         img_line = floor(img_line(width_range));
-%     
-%         % get the orientation of the knife edge high->low = -1 / low->high = 1
-%         [min_line, min_idx] = min(img_line);
-%         [max_line, max_idx] = max(img_line);
-%         if(max_idx < min_idx)
-%             direction = -1;
-%         else
-%             direction = 1;
-%         end
-% 
-%         %%% new code here %%%
-%         %[line_min, min_idx] = min(img_line);
-%         
-%         % get the image limits
-% %         max_idx = min(min_idx+100, size(img_line,2));
-% %         min_idx = max(1, min_idx-100);
-% %         
-% %         img_line = img_line(min_idx:1:max_idx);
-%         %%% end of new coder here %%%
-% 
-%         % find the areas where limits are met
-%         mid_limit = (floor(max(img_line(:))) + ceil(min(img_line(:))))/2;
-%         %[~, mid_idx] = min(abs(img_line - mid_limit));   
-% 
-%         if(direction == 1)
-% 
-%             mid_idx = find(img_line<mid_limit,1,'last');
-% 
-%             %split the ranges in the middle
-%             x2 = 1:mid_idx;
-%             x1 = (mid_idx+1):numel(img_line);
-% 
-%             %k1 = unique(convhull(x1, img_line(x1)));
-%             %k2 = unique(convhull(x2, img_line(x2)));
-% 
-%             %k1 = k1(end:-1:1);
-%             %k2 = k2(end:-1:1);
-%             %k_line = cat(1, k2(1:end-1), k1);
-%         else
-%             mid_idx = find(img_line<mid_limit,1,'first');
-% 
-%             x1 = 1:mid_idx;
-%             x2 = (mid_idx+1):numel(img_line);
-% 
-%             %k1 = unique(convhull(x1, img_line(x1)));
-%             %k2 = unique(convhull(x2, img_line(x2)));
-% 
-%             %k_line = cat(1, k1(1:end-1), k2);
-%         end
-% 
-%         % find the lower limit
-%         count = 0;
-%         low_limit = floor(img_line(mid_idx));
-%         while((low_limit>min_line) && (count < 4))
-% 
-%             r = (img_line(x2) >= low_limit-0.25) & (img_line(x2) <= low_limit+0.25);
-%             count = sum(r);
-% 
-%             low_limit = low_limit - 0.25;
-%         end
-%         low_limit = low_limit + 0.25;
-% 
-%         % find the high limit
-%         count = 0;
-%         high_limit = floor(img_line(mid_idx));
-%         while((high_limit < max_line) && (count < 4))
-% 
-%             r = (img_line(x1) >= high_limit-0.25) & (img_line(x1) <= high_limit+0.25);
-%             count = sum(r);
-% 
-%             high_limit = high_limit + 0.25;
-%         end
-%         high_limit = high_limit - 0.25;
-% 
-% 
-%         % find the initial match
-%         [match, num, min_ex, max_ex] = find_match(img_line, low_limit, high_limit, mid_idx);
-%         %num = sum(match);
-% 
-%         % find the mean of the lines 30 pixels from the match
-%         % need to make sure that we don't go out of bounds on the arrays
-%         mn2 = floor(mean(img_line(max(1, min_ex-10):max(1,min_ex-1))) + 0.5);
-%         mx2 = floor(mean(img_line(min(max_ex+1, numel(img_line)):min(max_ex+10, numel(img_line)))) + 0.5);
-% 
-%         % run through the matches a second time and try to refine the match 
-%         % TODO: this might break if the knife edge is low->high!!!
-%         % find min_ex2
-%         for jdx=min_ex:-1:max(1, min_ex-30)
-%             if(img_line(jdx) >= mn2)
-%                 break;
-%             end
-%         end
-%         min_ex2 = jdx+1;
-% 
-%         % find max_ex2
-%         for jdx=max_ex:1:min(max_ex+30, numel(img_line))
-%             if(img_line(jdx) <= mx2)
-%                 break;
-%             end
-%         end
-%         max_ex2 = jdx;
-% 
-%         num2(end+1) = max_ex2 - min_ex2;
-%     end
-%     
-%     fprintf('%03d: %s, \t%03d,\t%03d\n', (idx-1), listing(idx).name, num, floor(mean(num2)));
-%         
-%     figure(2)
-%     plot(img_line, '.-b');
-%     %stairs(floor(img_line), '.-b');
-%     
-%     hold on;
-%     stem([min_ex max_ex], [1 1]*max(img_line(:)), 'Color', 'r', 'Marker', '.');
-%     stem([min_ex2 max_ex2], [1 1]*max(img_line(:)), 'Color', 'g', 'Marker', '.');
-% 
-%     plot(low_limit*ones(size(img_line)), '--r');
-%     plot(high_limit*ones(size(img_line)), '--r');
-%     
-%     plot(mn2*ones(size(img_line)), '--g');
-%     plot(mx2*ones(size(img_line)), '--g');
-%     hold off;
-% 
-%     figure(3)
-%     mesh(img(:,width_range));
-%     view(10, 10);
-% end
-
 fprintf('-----------------------------------------------------\n')
 

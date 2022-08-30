@@ -33,6 +33,9 @@ max_blur_radius = 300;
 
 img_offset = 10;
 
+scan_length = 12;
+scan_offset = 0.8;
+
 slice_row = 0;
 sk = create_1D_gauss_kernel(3, 1.0);
 %sk = [1/3 1/3 1/3];
@@ -176,18 +179,18 @@ for idx=30:numel(listing)
         % find the high limit 
         figure(201)
         count = 0;
-        for jdx=mid_idx:-1:21
+        for jdx=mid_idx:-1:(scan_length + 1)
             high_limit = img_line(jdx);
             
             plot(img_line(x1),'b');
             hold on;
             plot(img_line_s(x1),'g');
-            tmp_line = img_line_s(jdx:-1:jdx-20);
-            r = ((tmp_line) > (high_limit-1)) & (tmp_line < (high_limit+1));
+            tmp_line = img_line(jdx:-1:jdx-scan_length);
+            r = ((tmp_line) > (high_limit-scan_offset)) & (tmp_line < (high_limit+scan_offset));
         
             count = sum(r);
 
-            stem(jdx:-1:jdx-20, r*max_line, 'r');
+            stem(jdx:-1:jdx-scan_length, r*max_line, 'r');
             hold off;
             drawnow;
             
@@ -201,13 +204,13 @@ for idx=30:numel(listing)
         
 %         figure(202)
         count = 0;
-        for jdx=mid_idx:numel(img_line) - 21
+        for jdx=mid_idx:(numel(img_line) - scan_length - 1)
             low_limit = img_line(jdx);
 %             plot(img_line(x2),'b');
 %             hold on;
 %             plot(img_line_s(x2),'g');
-            tmp_line = img_line_s(jdx:jdx+20);            
-            r = ((tmp_line) > (low_limit-1)) & (tmp_line < (low_limit+1));
+            tmp_line = img_line(jdx:jdx+scan_length);            
+            r = ((tmp_line) > (low_limit-scan_offset)) & (tmp_line < (low_limit+scan_offset));
             
             count = sum(r);
 

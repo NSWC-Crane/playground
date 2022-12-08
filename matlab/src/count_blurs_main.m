@@ -31,7 +31,7 @@ commandwindow;
 % this defines the expected maximum blur radius
 max_blur_radius = 300;
 
-img_offset = 10;
+
 
 scan_length = 12;
 scan_offset = 0.8;
@@ -49,9 +49,13 @@ fx = [1 -2 1];
 offset = 1/255;
 
 %% start running through images
+img_off_low = 10;
+img_off_high = 10;
+
 fprintf('File Name\t\t\t\t\t\t\t\t# of Pixels Blurred\n')
 fprintf('--------------------------------------------------------\n')
 first = true;
+
 for idx=30:numel(listing)
 
     % load in an image and get its size
@@ -67,23 +71,39 @@ for idx=30:numel(listing)
     end
     
     % rotate the images
-    img = imrotate(img, 270);
+    %img = imrotate(img, 270);
     
     figure(1)
     set(gcf,'position',([100,100,1500,600]),'color','w')
     subplot(1,3,1);
+    hold off
     image(uint8(img));
     colormap(jet(256));
+    hold on
     
     if(first)
         [slice_col, slice_row, ~] = ginput(1);
+        slice_row = floor(slice_row);
         first = false;
+        
+        if(slice_row - img_off_low < 1)
+            img_off_low = slice_row - 1;
+        end
+        
+        if(slice_row + img_off_high > img_h)
+            img_off_high = img_h - slice_row;
+        end
     end
+
+    plot([1,img_w],[slice_row,slice_row], '-k');
+    plot([1,img_w],floor([slice_row-img_off_low,slice_row-img_off_low]), '--k');
+    plot([1,img_w],floor([slice_row+img_off_high,slice_row+img_off_high]), '--k');
+    
 
     % find the rough center points assuming that the knife edge is vertical
     % get the subset of the image at the center of the image - note this 
     % can be shifted to anywhere
-    img_s = img(floor([slice_row - img_offset, slice_row, slice_row + img_offset]),:);
+    img_s = img(floor([slice_row - img_off_low, slice_row, slice_row + img_off_high]),:);
     
     % find the 'x' center of the image
     %img_cw = floor(img_w/2);

@@ -3,9 +3,12 @@ function [startPix,numBlurPix] = CalcBlurredPix(ymin, ymax, idxIP, img_line)
 % ymax: local maximum values found for y
 % idxIP: the x value where the inflection point resides
 % img_line: the line image selected to evaluate blurred pixels
+% Returns:
+% startPix: index where blur begins
+% numBlurPix:  number of blurred pixels
 
 % Calculate number of blurred pixels after fine tuning indices for max and
-% min values (within deltaVal) - need estimate of inflection point to do this.
+% min values (within deltaVal) 
 
 deltaVal = 2;
 % Find max pixel location

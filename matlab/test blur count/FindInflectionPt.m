@@ -7,10 +7,14 @@ function [idxIP, valid, ymax, ymin] = FindInflectionPt( x, y, ymax, ymin, domain
 % domain: limited domain to search for inflection point, IP
 % ymax: logical of y to indicate location of local maxima
 % ymin:  logical of y to indicat location of local minima
+% Returns:
+% idxIP: index of inflection point
+% valid: is the inflection point returned valid?  If false, the idxIP is
+% the middle of the domain
 
 % step size
 h = x(2)-x(1);
-% To find inflection point, find 2nd derivative
+% To find inflection point, estimate 2nd derivative
 % Look only in domain
 dfdy = diff(y(domain,:))/h;
 df2dy2 = diff(dfdy)/h;
@@ -25,7 +29,7 @@ df2idx = find(abs(df2dy2(:,2))==df2val,1,'first');
 % Find location in fitted curve of inflection point
 idxIP = df2dy2(df2idx,1); 
 
-% Test validity of IP
+% Test validity of finding an Inflection Point
 % Is there a change from negative to poitive?
 % Test for first and last indices of df2idx (meaning there's no inflection
 % point).

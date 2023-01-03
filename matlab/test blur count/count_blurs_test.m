@@ -3,7 +3,7 @@
 % all ranges without any figures of the image line. At the end, a heatmap
 % will be plotted.
 % Images:  20220908_101308 (Only using Zoom 2000)
-% Define img_lineMean
+% Define img_line
 % Fit curve
 % Find local max and min on fitted curve
 % Find pixels within intensity value called deltaVal, moving toward center
@@ -46,8 +46,8 @@ rng = 750;  % For this test file, user must enter the range
 zoom = 2000; % Always use 2000
 
 %% Get the directory for the images
-img_path = uigetdir(startpath, 'Select Folder with Images');
-%img_path = "C:\Data\JSSAP\20220908_101308\20220908_101308\0750\z2000";
+%img_path = uigetdir(startpath, 'Select Folder with Images');
+img_path = "C:\Data\JSSAP\20220908_101308\20220908_101308\0750\z2000";
 image_ext = '*.png';
 listing = dir(strcat(img_path, '/', image_ext));
 

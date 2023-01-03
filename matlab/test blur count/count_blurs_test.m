@@ -70,7 +70,7 @@ Tb.Properties.VariableNames = col_label.';
 indT = 1;
 
 %% Iterate through images
-for idx=111:113 %:numel(listing) 
+for idx=1:5 %:numel(listing) 
     fprintf('Image Filename: %s\n', listing(idx).name);
     % Load in an image and get its size
     img_file = fullfile(img_path, '/', listing(idx).name);

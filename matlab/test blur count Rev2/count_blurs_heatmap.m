@@ -116,10 +116,6 @@ end
 filename = "C:\Data\JSSAP\20220908_101308\Rework\R100TbAll_1slice.csv";
 writetable(Tb,filename);
 
-
-
-
-
 % startFocus = 46200;
 % endFocus = 49200;
 % intvF = 10;

@@ -23,7 +23,7 @@ clearvars
 %slice_rows = [20, 50, 80, 110, 140];
 slice_rows = [100];
 rangeV = 500:10:750;
-zoom = 2000; % Always use 2000
+%zoom = 2000; % Always use 2000
 numFilesPerDir = 301;
 
 %% Set up a table to collect results 

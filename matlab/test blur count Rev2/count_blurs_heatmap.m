@@ -21,7 +21,7 @@ clearvars
 
 %% Set constants
 %slice_rows = [20, 50, 80, 110, 140];
-slice_rows = [100];
+slice_rows = [110];
 rangeV = 500:10:750;
 zoom = 2000; % Always use 2000
 numFilesPerDir = 301;

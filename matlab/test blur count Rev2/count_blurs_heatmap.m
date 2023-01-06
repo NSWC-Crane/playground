@@ -71,34 +71,27 @@ for rng = rangeV
             {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
     
         % Reduce size of image to find blur count
-        %img = img(1:200,200:400);
-        %[img_h, img_w] = size(img);
-        % Reduce size of image to find blur count
-        img = ReduceImg(rng,img);
-       
+        [img,startX] = ReduceImg(rng,img);
+        %img = img(1:350,113:472);
+        [~, img_wR] = size(img);
+          
         totalblurP = 0;
         numRows = 0;
-        for i = 1:length(slice_rows)
-            % Define domain of img_line and fitted curve
-            x = (1:img_w).';
-           
+        for i = 1:length(slice_rows)     
             % Define line image along slice_row(i)
             img_line = img(slice_rows(i), :);
-    
-            % Test validity of slice
-            %validT = TestValidity(img_line);
-            validT = true;
-    
-            if validT == true
-                intv = 10;
-                [xC,yC, numBlurPix,startPix, stopPix] = CalculateBlurCount(img_line, intv);  
+            % Define domain of img_line
+            x = (startX:startX+img_wR-1).';
+            % Calculate pixel blur    
+            intv = 10;
+            [xC,yC, numBlurPix,startPix, stopPix] = CalculateBlurCount(img_line, intv);           
+            xC = xC + startX-1;
                 
-                % Add results to table
-                Tb(indT,"StartR" + num2str(slice_rows(i))) = {startPix};
-                Tb(indT,"NumBlurR" + num2str(slice_rows(i))) = {numBlurPix};
-                totalblurP = totalblurP + numBlurPix;
-                numRows = numRows + 1;
-            end 
+            % Add results to table
+            Tb(indT,"StartR" + num2str(slice_rows(i))) = {startX+startPix-1};
+            Tb(indT,"NumBlurR" + num2str(slice_rows(i))) = {numBlurPix};
+            totalblurP = totalblurP + numBlurPix;
+            numRows = numRows + 1;
         end
         
         % Calculate Mean
@@ -111,17 +104,76 @@ for rng = rangeV
         Tb(indT,"BlurMean") = {avgBlur};
         indT = indT + 1;  
     end
+         
+%     %% Iterate through images
+%     for idx=1:numel(listing) 
+%         fprintf('Image Filename: %s\n', listing(idx).name);
+%         % Load in an image and get its size
+%         img_file = fullfile(img_path, '/', listing(idx).name);
+%         img = imread(img_file);
+%         
+%         [img_h, img_w, img_c] = size(img);
+%         % Test for number of channels. Create gray image if more than 1.
+%         if(img_c > 1)
+%             img = double(rgb2gray(img));
+%         else
+%             img = double(img);
+%         end
+%         % Add data to Table
+%         focus = FindFocus(listing(idx).name);
+%         Tb(indT,["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd"]) = ...
+%             {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
+%     
+%         %[img_h, img_w] = size(img);
+%         % Reduce size of image to find blur count
+%         [img,startX] = ReduceImg(rng,img);
+%        
+%         totalblurP = 0;
+%         numRows = 0;
+%         for i = 1:length(slice_rows)
+%             % Define domain of img_line and fitted curve
+%             %x = (1:img_w).';
+%            
+%             % Define line image along slice_row(i)
+%             img_line = img(slice_rows(i), :);
+%     
+%             % Test validity of slice
+%             %validT = TestValidity(img_line);
+%             validT = true;
+%     
+%             if validT == true
+%                 intv = 10;
+%                 [xC,yC, numBlurPix,startPix, stopPix] = CalculateBlurCount(img_line, intv);  
+%                 
+%                 % Add results to table
+%                 Tb(indT,"StartR" + num2str(slice_rows(i))) = {startX+startPix-1};
+%                 Tb(indT,"NumBlurR" + num2str(slice_rows(i))) = {numBlurPix};
+%                 totalblurP = totalblurP + numBlurPix;
+%                 numRows = numRows + 1;
+%             end 
+%         end
+%         
+%         % Calculate Mean
+%         if numRows > 0
+%             avgBlur = totalblurP/numRows;
+%         else
+%             avgBlur = img_w;  % Indicates that all slice_rows were invalid
+%         end
+%         
+%         Tb(indT,"BlurMean") = {avgBlur};
+%         indT = indT + 1;  
+%     end
 end
-% Save Tb table
-filename = "C:\Data\JSSAP\20220908_101308\Rework\R100TbAll_1slice.csv";
+%% Save Tb table
+filename = "C:\Data\JSSAP\20220908_101308\Rework\NR100TbAll_1slice.csv";
 writetable(Tb,filename);
 
+%% Create heatmap
+% Group data by focus intervals
 % startFocus = 46200;
 % endFocus = 49200;
 % intvF = 10;
 
-%% Create heatmap
-% Group data by focus intervals
 startFocus = 46500;
 endFocus = 47340;
 intvF = 10;
@@ -141,7 +193,7 @@ for rng = rangeV
         indH = indH + 1;
     end
 end
-writetable(TbHeatm, "C:\Data\JSSAP\20220908_101308\Rework\R100TbHeatmap10s_1slice.csv");
+writetable(TbHeatm, "C:\Data\JSSAP\20220908_101308\Rework\NR100TbHeatmap10s_1slice.csv");
 
 fig = figure(5);
 h = heatmap(TbHeatm, 'Range', 'FocusItv', 'ColorVariable', 'BlurPix','Colormap', parula);
@@ -149,13 +201,13 @@ xlabel("Range")
 ylabel("Focus Interval")
 title("Mean Blurred Pixels per Range and Focus Interval")
 set(gcf,'position',([100,100,1100,1500]),'color','w')
-fileOut = "C:\Data\JSSAP\20220908_101308\Rework\R100heatmap10s_1slice.png";
+fileOut = "C:\Data\JSSAP\20220908_101308\Rework\NR100heatmap10s_1slice.png";
 exportgraphics(h,fileOut,'Resolution',300)
-fileFig = "C:\Data\JSSAP\20220908_101308\Rework\R100heatmap10s_1slice.fig";
+fileFig = "C:\Data\JSSAP\20220908_101308\Rework\NR100heatmap10s_1slice.fig";
 savefig(fig, fileFig)
 
 %% Create output matrix
-fileMat = "C:\Data\JSSAP\20220908_101308\Rework\sample_blur_radius_data2.mat";
+fileMat = "C:\Data\JSSAP\20220908_101308\Rework\Nsample_blur_radius_data2.mat";
 for rInd = 1:length(rangeV)
     for fInd = 1:length(focusI)-1
         indB = find(TbHeatm.Range == rangeV(rInd) & TbHeatm.FocusItv == focusI(fInd));

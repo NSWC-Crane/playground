@@ -34,8 +34,18 @@ rng = 550;  % For this test file, user must enter the range
 zoom = 2000; % Always use 2000
 
 %% Get the directory for the images
+% Setup data directories
+platform = string(getenv("PLATFORM"));
+if(platform == "Laptop")
+    data_root = "D:\data\turbulence\";
+elseif (platform == "LaptopN")
+    data_root = "C:\Projects\data\turbulence\";
+else   
+    data_root = "C:\Data\JSSAP\20220908_101308\";
+end
+
 %img_path = uigetdir(startpath, 'Select Folder with Images');
-img_path = "C:\Data\JSSAP\20220908_101308\20220908_101308\0" + num2str(rng) + "\z2000";
+img_path = data_root + "20220908_101308\0" + num2str(rng) + "\z2000";
 image_ext = '*.png';
 listing = dir(strcat(img_path, '/', image_ext));
 

@@ -19,7 +19,6 @@
 % Plot vertical lines at x-axis indices where selected max and min occur
 % Plot horizontal lines at pixel values for max and min
 
-
 %%
 format long g
 format compact
@@ -29,8 +28,8 @@ clearvars
 
 %% Set constants
 %slice_rows = [20, 50, 80, 110, 140];
-slice_rows = [100];
-rng = 550;  % For this test file, user must enter the range
+slice_rows = [110];
+rng = 510;  % For this test file, user must enter the range
 zoom = 2000; % Always use 2000
 
 %% Get the directory for the images
@@ -68,7 +67,7 @@ Tb.Properties.VariableNames = col_label.';
 indT = 1;
 
 %% Iterate through images
-for idx=82:85 %:numel(listing) 
+for idx=1:numel(listing) 
     fprintf('Image Filename: %s\n', listing(idx).name);
     % Load in an image and get its size
     img_file = fullfile(img_path, '/', listing(idx).name);
@@ -87,9 +86,9 @@ for idx=82:85 %:numel(listing)
         {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
 
     % Reduce size of image to find blur count
-    img = ReduceImg(rng,img);
+    [img,startX] = ReduceImg(rng,img);
     %img = img(1:350,113:472);
-    [img_h, img_w] = size(img);
+    [~, img_wR] = size(img);
 
     % Plot image and selected slice_row 
     figure(1)
@@ -97,64 +96,60 @@ for idx=82:85 %:numel(listing)
     subplot(1,2,1);
     image(uint8(img));
     colormap(jet(256));
+    %xticklabels([startX:50:startX+350-1])
     hold on
     
     totalblurP = 0;
     numRows = 0;
-    for i = 1:length(slice_rows)
-        % Define domain of img_line and fitted curve
-        x = (1:img_w).';
+    for i = 1:length(slice_rows)    
         % Plot selected slice_row(i) line on image
         figure(1)
         subplot(1,2,1);
-        plot([1,img_w],[slice_rows(i),slice_rows(i)], '-k');
+        plot([1,img_wR],[slice_rows(i),slice_rows(i)], '-k');
         hold on
 
         % Define line image along slice_row(i)
         img_line = img(slice_rows(i), :);
-
-        % Plot curve
+        % Define domain of img_line
+        x = (startX:startX+img_wR-1).';
+        % Plot image line
         figure(1)
         subplot(1,2,2);
         plot(x, img_line,'k')
         hold on
         legendL = "selected image line";
 
-        % Test validity of slice
-        %validT = TestValidity(img_line);
-        validT = true;
+        intv = 20;
+        [xC,yC, numBlurPix,startPix] = CalculateBlurCount(img_line, intv);
 
-        if validT == true
-            intv = 10;
-            [xC,yC, numBlurPix,startPix, stopPix] = CalculateBlurCount(img_line, intv);
-    
-            % Plot curve
-            figure(1)
-            subplot(1,2,2);
-            
-            plot(xC.', yC,'m')
-            hold on
-            legendL = [legendL; "smoothed curve"];
-            
-            % Plot locations of blurred pixels 
-            stem(startPix,200,'filled','r')
-            stem(startPix+numBlurPix,200,'filled','c')
-            plot([1,512],[img_line(startPix),img_line(startPix)],'r')
-            plot([1,512],[img_line(startPix+numBlurPix),img_line(startPix+numBlurPix)],'c')
-            hold on
-    
-            % Add results to table
-            Tb(indT,"StartR" + num2str(slice_rows(i))) = {startPix};
-            Tb(indT,"NumBlurR" + num2str(slice_rows(i))) = {numBlurPix};
-            totalblurP = totalblurP + numBlurPix;
-            numRows = numRows + 1;
-        end
+        % Plot curve
+        figure(1)
+        subplot(1,2,2);
+        
+        xC = xC + startX-1;
+        plot(xC.', yC,'m')
+        hold on
+        legendL = [legendL; "smoothed curve"];
+        
+        % Plot locations of blurred pixels 
+        stem(startX + startPix-1,200,'filled','r')
+        stem((startX+startPix+numBlurPix-2),200,'filled','c')
+        plot([1,512],[img_line(startPix),img_line(startPix)],'r')
+        plot([1,512],[img_line(startPix+numBlurPix-1),img_line(startPix+numBlurPix-1)],'c')
+        hold on
+
+        % Add results to table
+        Tb(indT,"StartR" + num2str(slice_rows(i))) = {startX+startPix-1};
+        Tb(indT,"NumBlurR" + num2str(slice_rows(i))) = {numBlurPix};
+        totalblurP = totalblurP + numBlurPix;
+        numRows = numRows + 1;
+
         % Plot parameters
         title("Range " + num2str(rng) + " Zoom "+ num2str(zoom) + " Focus " + num2str(focus))
         xlabel("Pixel Number")
         ylabel("Pixel Value")
         ylim([0,255])
-        xlim([1,img_w])
+        xlim([startX,startX+350-1])
         grid on
         legend(legendL);
         hold off

@@ -29,7 +29,7 @@ clearvars
 %% Set constants
 %slice_rows = [20, 50, 80, 110, 140];
 slice_rows = [110];
-rng = 550;  % For this test file, user must enter the range
+rng = 510;  % For this test file, user must enter the range
 zoom = 2000; % Always use 2000
 
 %% Get the directory for the images
@@ -67,7 +67,7 @@ Tb.Properties.VariableNames = col_label.';
 indT = 1;
 
 %% Iterate through images
-for idx=83:87%:numel(listing) 
+for idx=1:numel(listing) 
     fprintf('Image Filename: %s\n', listing(idx).name);
     % Load in an image and get its size
     img_file = fullfile(img_path, '/', listing(idx).name);

@@ -1,5 +1,7 @@
 function [img_reduced, startX] = ReduceImg(rangeV,img)
-
+% Reduces image size based on range to ease processing.
+% Returns reduced image and the pixel number of the first x-axis pixel in
+% reduced image.
 
 switch(rangeV)
     case {500,510,520,530,540,550,560,570,580,590,600}
@@ -12,6 +14,5 @@ switch(rangeV)
         img_reduced = img(1:350,123:472);
         startX = 123;
 end
-
 
 end

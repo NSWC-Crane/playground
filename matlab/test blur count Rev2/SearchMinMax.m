@@ -2,7 +2,7 @@ function [locPix] = SearchMinMax(img_line, y, deltaVal, indx, stype)
 %Fine tunes max and min values
 % img_line: horizontal slice of pixels on image (vector)
 % deltaVal: to find end of max or beginning of min on img_line, this value
-% is added to max or min value
+% is addesubtracted from max or added to min value
 % indx: location of max or min
 % stype: max or min
 % Returns:

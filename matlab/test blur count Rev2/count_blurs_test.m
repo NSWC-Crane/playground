@@ -19,7 +19,6 @@
 % Plot vertical lines at x-axis indices where selected max and min occur
 % Plot horizontal lines at pixel values for max and min
 
-
 %%
 format long g
 format compact
@@ -102,8 +101,7 @@ for idx=1:numel(listing)
     
     totalblurP = 0;
     numRows = 0;
-    for i = 1:length(slice_rows)
-        
+    for i = 1:length(slice_rows)    
         % Plot selected slice_row(i) line on image
         figure(1)
         subplot(1,2,1);
@@ -122,9 +120,8 @@ for idx=1:numel(listing)
         legendL = "selected image line";
 
         intv = 10;
-        [xC,yC, numBlurPix,startPix, stopPix] = CalculateBlurCount(img_line, intv);
+        [xC,yC, numBlurPix,startPix] = CalculateBlurCount(img_line, intv);
 
-        
         % Plot curve
         figure(1)
         subplot(1,2,2);

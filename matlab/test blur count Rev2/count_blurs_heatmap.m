@@ -23,7 +23,7 @@ clearvars
 %slice_rows = [20, 50, 80, 110, 140];
 slice_rows = [100];
 rangeV = 500:10:750;
-%zoom = 2000; % Always use 2000
+zoom = 2000; % Always use 2000
 numFilesPerDir = 301;
 
 %% Set up a table to collect results 
@@ -83,7 +83,7 @@ for rng = rangeV
             % Define domain of img_line
             x = (startX:startX+img_wR-1).';
             % Calculate pixel blur    
-            intv = 10;
+            intv = 16;
             [xC,yC, numBlurPix,startPix] = CalculateBlurCount(img_line, intv);           
             xC = xC + startX-1;
                 
@@ -118,7 +118,7 @@ writetable(Tb,filename);
 
 startFocus = 46500;
 endFocus = 47340;
-intvF = 10;
+intvF = 20;
 
 focusI = startFocus:intvF:endFocus;
 rowsH = (length(rangeV)-1) * length(focusI);

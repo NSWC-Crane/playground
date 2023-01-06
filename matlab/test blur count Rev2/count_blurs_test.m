@@ -29,8 +29,8 @@ clearvars
 %% Set constants
 %slice_rows = [20, 50, 80, 110, 140];
 slice_rows = [100];
-rng = 500;  % For this test file, user must enter the range
-%zoom = 2000; % Always use 2000
+rng = 550;  % For this test file, user must enter the range
+zoom = 2000; % Always use 2000
 
 %% Get the directory for the images
 % Setup data directories
@@ -119,7 +119,7 @@ for idx=1:numel(listing)
         hold on
         legendL = "selected image line";
 
-        intv = 10;
+        intv = 20;
         [xC,yC, numBlurPix,startPix] = CalculateBlurCount(img_line, intv);
 
         % Plot curve

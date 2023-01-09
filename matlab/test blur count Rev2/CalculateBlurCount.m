@@ -21,32 +21,23 @@ function [xT, yT, numBlurPix,startPix] = CalculateBlurCount(img_line, intv)
 % point last:  get mean of pixel values from pixels at half of
 % interval before this pixel to the last pixel in image.
 
-method = 0;
+method = 1;
 switch(method)
     case 0
+
         xT = 1:intv:length(img_line);
+        
         halfI = round(intv/2);
-
+        
         yT = zeros(round(length(img_line)/intv),1);
-
         yT(1) = mean(img_line(1:halfI));
         ind = halfI+1;
+        
         for i = 2:length(yT)-1
             yT(i) = mean(img_line(ind:ind+intv-1));
             ind = ind+intv;
         end
-
-        yT(i+1) = mean(img_line(ind:end));
-
-        xT = 1:intv:length(img_line);
-        halfI = round(intv/2);
-        yT = zeros(round(length(img_line)/intv),1);
-        yT(1) = mean(img_line(1:halfI));
-        ind = halfI+1;
-        for i = 2:length(yT)-1
-            yT(i) = mean(img_line(ind:ind+intv-1));
-            ind = ind+intv;
-        end
+        
         yT(i+1) = mean(img_line(ind:end));
 
     case 1
@@ -63,8 +54,9 @@ end
 [~,indyTmn] = min(yT);
 
 % Allows tolerance in pixel value for real max and min
-deltaMax = 7;
+deltaMax = 5;
 deltaMin = 5;
+
 startPix = SearchMinMax(img_line, yT, deltaMax, indyTmx, 'max');
 stopPix = SearchMinMax(img_line, yT, deltaMin, indyTmn, 'min');
 

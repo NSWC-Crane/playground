@@ -21,10 +21,20 @@ clearvars
 
 %% Set constants
 %slice_rows = [20, 50, 80, 110, 140];
-slice_rows = [110];
-rangeV = 500:10:750;
-zoom = 2000; % Always use 2000
+slice_rows = [50];
+rangeV = 510:10:750;
+zoom = 4500; % Always use 2000
 numFilesPerDir = 301;
+
+%% Setup data directories
+platform = string(getenv("PLATFORM"));
+if(platform == "Laptop")
+    data_root = "D:\data\turbulence\";
+elseif (platform == "LaptopN")
+    data_root = "C:\Projects\data\turbulence\";
+else   
+    data_root = "C:\Data\JSSAP\20220908_101308\";
+end
 
 %% Set up a table to collect results 
 col_label = ["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd"];
@@ -46,18 +56,20 @@ indT = 1;
 for rng = rangeV
 
     %% Get the directory info of the images
-    img_path = "C:\Data\JSSAP\20220908_101308\20220908_101308\0" + num2str(rng) + "\z2000";
+    img_path = data_root + "20220908_101308\0" + num2str(rng) + "\z" + num2str(zoom);
     image_ext = '*.png';
     listing = dir(strcat(img_path, '/', image_ext));
     fprintf('IMAGE PATH: %s\n', img_path);
     
     %% Iterate through images
-    for idx=1:numel(listing) 
+    for idx=40:numel(listing)-190
         fprintf('Image Filename: %s\n', listing(idx).name);
         % Load in an image and get its size
         img_file = fullfile(img_path, '/', listing(idx).name);
         img = imread(img_file);
         
+        img = fliplr(imrotate(img, 90));   
+
         [img_h, img_w, img_c] = size(img);
         % Test for number of channels. Create gray image if more than 1.
         if(img_c > 1)
@@ -71,7 +83,7 @@ for rng = rangeV
             {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
     
         % Reduce size of image to find blur count
-        [img,startX] = ReduceImg(rng,img);
+        [img,startX] = ReduceImg(rng, zoom, img);
         %img = img(1:350,113:472);
         [~, img_wR] = size(img);
           
@@ -83,7 +95,7 @@ for rng = rangeV
             % Define domain of img_line
             x = (startX:startX+img_wR-1).';
             % Calculate pixel blur    
-            intv = 16;
+            intv = 6;
             [xC,yC, numBlurPix,startPix] = CalculateBlurCount(img_line, intv);           
             xC = xC + startX-1;
                 
@@ -107,7 +119,7 @@ for rng = rangeV
          
 end
 %% Save Tb table
-filename = "C:\Data\JSSAP\20220908_101308\Rework\NR100TbAll_1slice.csv";
+filename = data_root + "Rework\NR100TbAll_1slice_z" + num2str(zoom) + ".csv";
 writetable(Tb,filename);
 
 %% Create heatmap
@@ -116,9 +128,9 @@ writetable(Tb,filename);
 % endFocus = 49200;
 % intvF = 10;
 
-startFocus = 46500;
-endFocus = 47340;
-intvF = 20;
+intvF = 10;
+startFocus = 46600;
+endFocus = 47290;
 
 focusI = startFocus:intvF:endFocus;
 rowsH = (length(rangeV)-1) * length(focusI);
@@ -135,7 +147,7 @@ for rng = rangeV
         indH = indH + 1;
     end
 end
-writetable(TbHeatm, "C:\Data\JSSAP\20220908_101308\Rework\NR100TbHeatmap10s_1slice.csv");
+writetable(TbHeatm, data_root + "Rework\NR100TbHeatmap10s_1slice_z" + num2str(zoom) + ".csv");
 
 fig = figure(5);
 h = heatmap(TbHeatm, 'Range', 'FocusItv', 'ColorVariable', 'BlurPix','Colormap', parula);
@@ -143,13 +155,13 @@ xlabel("Range")
 ylabel("Focus Interval")
 title("Mean Blurred Pixels per Range and Focus Interval")
 set(gcf,'position',([100,100,1100,1500]),'color','w')
-fileOut = "C:\Data\JSSAP\20220908_101308\Rework\NR100heatmap10s_1slice.png";
+fileOut = data_root + "Rework\NR100heatmap10s_1slice.png";
 exportgraphics(h,fileOut,'Resolution',300)
-fileFig = "C:\Data\JSSAP\20220908_101308\Rework\NR100heatmap10s_1slice.fig";
+fileFig = data_root + "Rework\NR100heatmap10s_1slice.fig";
 savefig(fig, fileFig)
 
 %% Create output matrix
-fileMat = "C:\Data\JSSAP\20220908_101308\Rework\Nsample_blur_radius_data2.mat";
+fileMat = data_root + "Rework\Nsample_blur_radius_data2_z" + num2str(zoom) + ".mat";
 for rInd = 1:length(rangeV)
     for fInd = 1:length(focusI)-1
         indB = find(TbHeatm.Range == rangeV(rInd) & TbHeatm.FocusItv == focusI(fInd));
@@ -158,7 +170,6 @@ for rInd = 1:length(rangeV)
 end
 range = rangeV;
 coc_map = newMat;
-zoom = [2000];
 focus = focusI(1:end-1);
 
 save(fileMat, 'coc_map', 'focus','range','zoom')

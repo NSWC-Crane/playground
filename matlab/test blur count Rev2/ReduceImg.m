@@ -1,62 +1,41 @@
-function [img_reduced, startX] = ReduceImg(rangeV, zoom, img)
-% Reduces image size based on range to ease processing.
+function [img_reduced, startW] = ReduceImg(img, slice_rows)
 % Returns reduced image and the pixel number of the first x-axis pixel in
 % reduced image.
 
+% Finds max and min of image that includes image lines of interest
+% Includes pixAllow pixels before max and pixAllow pixels after max
+% Use above to find length and startX
+% No longer dependent on zoom,range of image
 
-switch(zoom)
+pixAllow = 10;
 
-    case 2000
-        length = 80;
-        switch(rangeV)
-            case {500,510,520,530,540,550,560,570,580,590,600}
-                startX = 220;
-        %         img_reduced = img(1:350,163:512);
-                img_reduced = img(1:250,startX:(startX+length));
-            case {610,620,630,640,650,660,670,680,690,700}
-                startX = 205;
-        %         img_reduced = img(1:350,133:482);
-                img_reduced = img(1:250,startX:(startX+length));
-            case {710,720,730,740,750}
-                startX = 186;
-        %         img_reduced = img(1:350,123:472);
-                img_reduced = img(1:250,startX:(startX+length));
-        end
-        
-    case {4500}
-        
-        length = 50;
-        switch(rangeV)
-            case {500,510,520,530,540,550,560,570,580,590,600}
-                startX = 30;
-        %         img_reduced = img(1:350,163:512);
-                img_reduced = img(1:250,startX:(startX+length));
-            case {610,620,630,640,650,660,670,680,690,700}
-                startX = 20;
-        %         img_reduced = img(1:350,133:482);
-                img_reduced = img(1:250,startX:(startX+length));
-            case {710,720,730,740,750}
-                startX = 20;
-        %         img_reduced = img(1:350,123:472);
-                img_reduced = img(1:250,startX:(startX+length));
-        end
-    
-    case {5000}
-        
-        length = 50;
-        switch(rangeV)
-            case {500,510,520,530,540,550,560,570,580,590,600}
-                startX = 30;
-        %         img_reduced = img(1:350,163:512);
-                img_reduced = img(1:250,startX:(startX+length));
-            case {610,620,630,640,650,660,670,680,690,700}
-                startX = 30;
-        %         img_reduced = img(1:350,133:482);
-                img_reduced = img(1:250,startX:(startX+length));
-            case {710,720,730,740,750}
-                startX = 30;
-        %         img_reduced = img(1:350,123:472);
-                img_reduced = img(1:250,startX:(startX+length));
-        end
-    end
+% Define height of image based on location of slices (doesn't really affect
+% processing speed).
+heightR = max(slice_rows) + 50;
+
+% Create matrix of slices to find min and max values and locations
+for i = 1:length(slice_rows)
+    test_imgline(i,:) = img(slice_rows(i), :);
+end
+maxPixVal = max(test_imgline,[],'all');
+minPixVal = min(test_imgline,[],'all');
+[~, cMx] = find(test_imgline == maxPixVal, 1, "last");
+[~, cMn] = find(test_imgline == minPixVal, 1, "first");
+
+% Using location of max and mins, determine pixel number where reduced
+% image starts and the width of the reduced image.
+widthL = cMn - cMx + 2*(pixAllow);
+startW = cMx - pixAllow;
+if startW < 1
+    startW = 1;
+end
+
+% Reduce image size
+[~, widthI] = size(img);
+if startW + widthL > widthI
+    img_reduced = img(1:heightR,startW:end);
+else
+    img_reduced = img(1:heightR,startW:startW+widthL);
+end
+
 end

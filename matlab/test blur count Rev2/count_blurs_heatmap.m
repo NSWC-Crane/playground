@@ -16,14 +16,13 @@
 format long g
 format compact
 clc
-close all
+%close all
 clearvars
 
 %% Set constants
-%slice_rows = [20, 50, 80, 110, 140];
-slice_rows = [50];
+slice_rows = [46,48,50];
 rangeV = 510:10:750;
-zoom = 4500; % Always use 2000
+zoomV = 2000;
 numFilesPerDir = 301;
 
 %% Setup data directories
@@ -48,78 +47,79 @@ for slr = slice_rows
 end
 col_label = [col_label, colS1, colS2, "BlurMean"];
 vartypes = horzcat(vartypes,{'double'});
-Tb = table('Size', [numFilesPerDir* length(rangeV)+100, length(col_label)], 'VariableTypes', vartypes);
+Tb = table('Size', [numFilesPerDir*length(rangeV)*length(zoomV), length(col_label)], 'VariableTypes', vartypes);
 Tb.Properties.VariableNames = col_label.';
 indT = 1;
 
-%% Iterate through ranges
-for rng = rangeV
+%% Iterate through zoom values
+for zoom = zoomV
 
-    %% Get the directory info of the images
-    img_path = data_root + "20220908_101308\0" + num2str(rng) + "\z" + num2str(zoom);
-    image_ext = '*.png';
-    listing = dir(strcat(img_path, '/', image_ext));
-    fprintf('IMAGE PATH: %s\n', img_path);
+    %% Iterate through ranges
+    for rng = rangeV
     
-    %% Iterate through images
-    for idx=40:numel(listing)-190
-        fprintf('Image Filename: %s\n', listing(idx).name);
-        % Load in an image and get its size
-        img_file = fullfile(img_path, '/', listing(idx).name);
-        img = imread(img_file);
+        %% Get the directory info of the images
+        img_path = data_root + "20220908_101308\0" + num2str(rng) + "\z" + num2str(zoom);
+        image_ext = '*.png';
+        listing = dir(strcat(img_path, '/', image_ext));
+        fprintf('IMAGE PATH: %s\n', img_path);
         
-        img = fliplr(imrotate(img, 90));   
-
-        [img_h, img_w, img_c] = size(img);
-        % Test for number of channels. Create gray image if more than 1.
-        if(img_c > 1)
-            img = double(rgb2gray(img));
-        else
-            img = double(img);
-        end
-        % Add data to Table
-        focus = FindFocus(listing(idx).name);
-        Tb(indT,["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd"]) = ...
-            {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
-    
-        % Reduce size of image to find blur count
-        [img,startX] = ReduceImg(rng, zoom, img);
-        %img = img(1:350,113:472);
-        [~, img_wR] = size(img);
-          
-        totalblurP = 0;
-        numRows = 0;
-        for i = 1:length(slice_rows)     
-            % Define line image along slice_row(i)
-            img_line = img(slice_rows(i), :);
-            % Define domain of img_line
-            x = (startX:startX+img_wR-1).';
-            % Calculate pixel blur    
-            intv = 6;
-            [xC,yC, numBlurPix,startPix] = CalculateBlurCount(img_line, intv);           
-            xC = xC + startX-1;
-                
-            % Add results to table
-            Tb(indT,"StartR" + num2str(slice_rows(i))) = {startX+startPix-1};
-            Tb(indT,"NumBlurR" + num2str(slice_rows(i))) = {numBlurPix};
-            totalblurP = totalblurP + numBlurPix;
-            numRows = numRows + 1;
-        end
+        %% Iterate through images
+        for idx=1:numel(listing)
+            %fprintf('Image Filename: %s\n', listing(idx).name);
+            % Load in an image and get its size
+            img_file = fullfile(img_path, '/', listing(idx).name);
+            img = imread(img_file);
+            
+            img = fliplr(imrotate(img, 90));   
+            
+            [img_h, img_w, img_c] = size(img);
+            % Test for number of channels. Create gray image if more than 1.
+            if(img_c > 1)
+                img = double(rgb2gray(img));
+            else
+                img = double(img);
+            end
+            % Add data to Table
+            focus = FindFocus(listing(idx).name);
+            Tb(indT,["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd"]) = ...
+                {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
         
-        % Calculate Mean
-        if numRows > 0
-            avgBlur = totalblurP/numRows;
-        else
-            avgBlur = img_w;  % Indicates that all slice_rows were invalid
-        end
+            [img,startX] = ReduceImg(img, slice_rows);
+            [~, img_wR] = size(img);
         
-        Tb(indT,"BlurMean") = {avgBlur};
-        indT = indT + 1;  
+            totalblurP = 0;
+            numRows = 0;
+            % Iterate through slice_rows
+            for i = 1:length(slice_rows)    
+                        
+                % Define line image along slice_row(i)
+                img_line = img(slice_rows(i), :);
+                                        
+                intv = 6;
+                [~,~, numBlurPix,startBlPix] = CalculateBlurCount(img_line, intv);
+            
+                % Add results to table
+                Tb(indT,"StartR" + num2str(slice_rows(i))) = {startX+startBlPix-1};
+                Tb(indT,"NumBlurR" + num2str(slice_rows(i))) = {numBlurPix};
+                totalblurP = totalblurP + numBlurPix;
+                numRows = numRows + 1;
+        
+            end
+            
+            % Calculate Mean
+            if numRows > 0
+                avgBlur = floor(totalblurP/numRows);
+            else
+                avgBlur = img_w;  % Indicates that all slice_rows were invalid
+            end
+            
+            Tb(indT,"BlurMean") = {avgBlur};
+            indT = indT + 1;  
+         end
     end
-         
 end
-%% Save Tb table
-filename = data_root + "Rework\NR100TbAll_1slice_z" + num2str(zoom) + ".csv";
+% %% Save Tb table
+filename = data_root + "Rework2\TbZ" + num2str(zoom) +  ".csv";
 writetable(Tb,filename);
 
 %% Create heatmap
@@ -129,47 +129,48 @@ writetable(Tb,filename);
 % intvF = 10;
 
 intvF = 10;
-startFocus = 46600;
-endFocus = 47290;
+startFocus = 46800;
+endFocus = 47800;
+zoom = zoomV;
 
 focusI = startFocus:intvF:endFocus;
 rowsH = (length(rangeV)-1) * length(focusI);
-vartypesH = {'uint16', 'uint16', 'double'};
-TbHeatm = table('Size', [rowsH,3], 'VariableTypes', vartypesH);
-TbHeatm.Properties.VariableNames = ["Range", "FocusItv", "BlurPix"];
+vartypesH = {'uint16', 'uint16', 'uint16', 'double'};
+TbHeatm = table('Size', [rowsH,4], 'VariableTypes', vartypesH);
+TbHeatm.Properties.VariableNames = ["Range", "Zoom", "FocusItv", "BlurPix"];
 indH = 1;
 for rng = rangeV
     for fc = 1:length(focusI)-1 % One less interval than number of focus points
         %indF = find(Tb.Range == rng & Tb.focusRnd10 == focusI(fc)); % & Tb.focusRnd10 < focusI(fc+1) );
-        indF = find(Tb.Range == rng & Tb.Focus >= focusI(fc) & Tb.Focus < focusI(fc+1) );
-        TbHeatm(indH,:) = {rng, focusI(fc), mean(Tb.BlurMean(indF))};
-        TbHeatm(indH,:) = {rng, focusI(fc), mean(Tb.BlurMean(indF))};
+        indF = find(Tb.Range == rng & Tb.Zoom == zoom & Tb.Focus >= focusI(fc) & Tb.Focus < focusI(fc+1) );
+        TbHeatm(indH,:) = {rng, zoom, focusI(fc), mean(Tb.BlurMean(indF))};
+        %TbHeatm(indH,:) = {rng, focusI(fc), mean(Tb.BlurMean(indF))};
         indH = indH + 1;
     end
 end
-writetable(TbHeatm, data_root + "Rework\NR100TbHeatmap10s_1slice_z" + num2str(zoom) + ".csv");
+writetable(TbHeatm, data_root + "Rework2\TbHeatmapZ" + num2str(zoom) + ".csv");
 
-fig = figure(5);
+fig = figure();
 h = heatmap(TbHeatm, 'Range', 'FocusItv', 'ColorVariable', 'BlurPix','Colormap', parula);
 xlabel("Range")
 ylabel("Focus Interval")
-title("Mean Blurred Pixels per Range and Focus Interval")
+title("Zoom " + num2str(zoom) + ": Blurred Pixels per Range and Focus Interval")
 set(gcf,'position',([100,100,1100,1500]),'color','w')
-fileOut = data_root + "Rework\NR100heatmap10s_1slice.png";
+fileOut = data_root + "Rework2\Heatmap" + num2str(zoom) + ".png";
 exportgraphics(h,fileOut,'Resolution',300)
-fileFig = data_root + "Rework\NR100heatmap10s_1slice.fig";
+fileFig = data_root + "Rework2\Heatmap" + num2str(zoom) + ".fig";
 savefig(fig, fileFig)
 
-%% Create output matrix
-fileMat = data_root + "Rework\Nsample_blur_radius_data2_z" + num2str(zoom) + ".mat";
-for rInd = 1:length(rangeV)
-    for fInd = 1:length(focusI)-1
-        indB = find(TbHeatm.Range == rangeV(rInd) & TbHeatm.FocusItv == focusI(fInd));
-        newMat(fInd, rInd) = TbHeatm.BlurPix(indB);
-    end
-end
-range = rangeV;
-coc_map = newMat;
-focus = focusI(1:end-1);
-
-save(fileMat, 'coc_map', 'focus','range','zoom')
+% %% Create output matrix
+% fileMat = data_root + "Rework\Nsample_blur_radius_data2_z" + num2str(zoom) + ".mat";
+% for rInd = 1:length(rangeV)
+%     for fInd = 1:length(focusI)-1
+%         indB = find(TbHeatm.Range == rangeV(rInd) & TbHeatm.FocusItv == focusI(fInd));
+%         newMat(fInd, rInd) = TbHeatm.BlurPix(indB);
+%     end
+% end
+% range = rangeV;
+% coc_map = newMat;
+% focus = focusI(1:end-1);
+% 
+% save(fileMat, 'coc_map', 'focus','range','zoom')

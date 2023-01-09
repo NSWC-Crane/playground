@@ -13,41 +13,13 @@ function [xT, yT, numBlurPix,startPix] = CalculateBlurCount(img_line, intv)
 % startPix: location of start of blurred pixels in line image
 
 %% Smoothing curve
-% point 1: get mean of pixel values from pixel 1 to pixel at half of
-% interval.
-% point 2: get mean of pixel values for pixels that are at half the
-% interval size before the point and for half the interval size after the
-% point.
-% point last:  get mean of pixel values from pixels at half of
-% interval before this pixel to the last pixel in image.
 
-method = 1;
-switch(method)
-    case 0
+kernel = (1/intv) * ones(intv,1);
 
-        xT = 1:intv:length(img_line);
+yT = conv(img_line, kernel, 'valid');
+yT = cat(2, yT(1)*ones(1, floor(intv/2)), yT, yT(end)*ones(1, floor(intv/2)));
+xT = 1:length(yT);
         
-        halfI = round(intv/2);
-        
-        yT = zeros(round(length(img_line)/intv),1);
-        yT(1) = mean(img_line(1:halfI));
-        ind = halfI+1;
-        
-        for i = 2:length(yT)-1
-            yT(i) = mean(img_line(ind:ind+intv-1));
-            ind = ind+intv;
-        end
-        
-        yT(i+1) = mean(img_line(ind:end));
-
-    case 1
-        kernel = (1/intv) * ones(intv,1);
-        
-        yT = conv(img_line, kernel, 'valid');
-        yT = cat(2, yT(1)*ones(1, floor(intv/2)), yT, yT(end)*ones(1, floor(intv/2)));
-        xT = 1:length(yT);
-        
-end
 
 % Finds max and min on new curve
 [~,indyTmx] = max(yT);

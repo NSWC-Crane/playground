@@ -28,9 +28,9 @@ clearvars
 
 %% Set constants
 %slice_rows = [20, 50, 80, 110, 140];
-slice_rows = [50];
-rng = 600;  % For this test file, user must enter the range
-zoom = 4500; % Always use 2000
+slice_rows = [40,45,50];
+rng = 550;  % For this test file, user must enter the range
+zoom = 4500; 
 
 %% Get the directory for the images
 % Setup data directories
@@ -43,7 +43,6 @@ else
     data_root = "C:\Data\JSSAP\20220908_101308\";
 end
 
-%img_path = uigetdir(startpath, 'Select Folder with Images');
 img_path = data_root + "20220908_101308\0" + num2str(rng) + "\z" + num2str(zoom);
 image_ext = '*.png';
 listing = dir(strcat(img_path, '/', image_ext));
@@ -61,13 +60,14 @@ for slr = slice_rows
     vartypes = horzcat(vartypes,{'uint16','uint16'});
 end
 col_label = [col_label, colS1, colS2, "BlurMean"];
-vartypes = horzcat(vartypes,{'double'});
+vartypes = horzcat(vartypes,{'uint16'});
 Tb = table('Size', [length(listing), length(col_label)], 'VariableTypes', vartypes);
 Tb.Properties.VariableNames = col_label.';
 indT = 1;
 
 %% Iterate through images
-for idx=240:1:numel(listing)-30
+figure(1)
+for idx=220:240%:numel(listing)
     fprintf('Image Filename: %s\n', listing(idx).name);
     % Load in an image and get its size
     img_file = fullfile(img_path, '/', listing(idx).name);
@@ -87,9 +87,7 @@ for idx=240:1:numel(listing)-30
     Tb(indT,["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd"]) = ...
         {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
 
-    % Reduce size of image to find blur count
-    [img,startX] = ReduceImg(rng, zoom, img);
-    %img = img(1:350,113:472);
+    [img,startX] = ReduceImg(img, slice_rows);
     [~, img_wR] = size(img);
 
     % Plot image and selected slice_row 
@@ -103,16 +101,18 @@ for idx=240:1:numel(listing)-30
     
     totalblurP = 0;
     numRows = 0;
+    % Iterate through slice_rows
     for i = 1:length(slice_rows)    
         % Plot selected slice_row(i) line on image
-        figure(1)
+       
         subplot(1,2,1);
-        plot([1,img_wR],[slice_rows(i),slice_rows(i)], '-k');
+        plot([1,img_w],[slice_rows(i),slice_rows(i)], '-k');
         hold on
 
         % Define line image along slice_row(i)
         img_line = img(slice_rows(i), :);
         % Define domain of img_line
+
         x = (startX:startX+img_wR-1).';
         % Plot image line
         figure(1)
@@ -121,8 +121,8 @@ for idx=240:1:numel(listing)-30
         hold on
         legendL = "selected image line";
 
-        intv = 4;
-        [xC,yC, numBlurPix,startPix] = CalculateBlurCount(img_line, intv);
+        intv = 6;
+        [xC,yC, numBlurPix,startBlPix] = CalculateBlurCount(img_line, intv);
 
         % Plot curve
         figure(1)
@@ -134,14 +134,14 @@ for idx=240:1:numel(listing)-30
         legendL = [legendL; "smoothed curve"];
         
         % Plot locations of blurred pixels 
-        stem(startX + startPix-1,255,'filled','r')
-        stem((startX+startPix+numBlurPix-2),255,'filled','c')
-        plot([1,512],[img_line(startPix),img_line(startPix)],'r')
-        plot([1,512],[img_line(startPix+numBlurPix-1),img_line(startPix+numBlurPix-1)],'c')
+        stem(startX + startBlPix-1,255,'filled','r')
+        stem((startX+startBlPix+numBlurPix-2),255,'filled','c')
+        plot([1,512],[img_line(startBlPix),img_line(startBlPix)],'r')
+        plot([1,512],[img_line(startBlPix+numBlurPix-1),img_line(startBlPix+numBlurPix-1)],'c')
         hold on
 
         % Add results to table
-        Tb(indT,"StartR" + num2str(slice_rows(i))) = {startX+startPix-1};
+        Tb(indT,"StartR" + num2str(slice_rows(i))) = {startX+startBlPix-1};
         Tb(indT,"NumBlurR" + num2str(slice_rows(i))) = {numBlurPix};
         totalblurP = totalblurP + numBlurPix;
         numRows = numRows + 1;
@@ -160,7 +160,7 @@ for idx=240:1:numel(listing)-30
     
     % Calculate Mean
     if numRows > 0
-        avgBlur = totalblurP/numRows;
+        avgBlur = floor(totalblurP/numRows);
     else
         avgBlur = img_w;  % Indicates that all slice_rows were invalid
     end

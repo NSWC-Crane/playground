@@ -28,9 +28,9 @@ clearvars
 
 %% Set constants
 %slice_rows = [20, 50, 80, 110, 140];
-slice_rows = [110];
-rng = 510;  % For this test file, user must enter the range
-zoom = 2000; % Always use 2000
+slice_rows = [50];
+rng = 600;  % For this test file, user must enter the range
+zoom = 4500; % Always use 2000
 
 %% Get the directory for the images
 % Setup data directories
@@ -44,7 +44,7 @@ else
 end
 
 %img_path = uigetdir(startpath, 'Select Folder with Images');
-img_path = data_root + "20220908_101308\0" + num2str(rng) + "\z2000";
+img_path = data_root + "20220908_101308\0" + num2str(rng) + "\z" + num2str(zoom);
 image_ext = '*.png';
 listing = dir(strcat(img_path, '/', image_ext));
 
@@ -67,11 +67,13 @@ Tb.Properties.VariableNames = col_label.';
 indT = 1;
 
 %% Iterate through images
-for idx=1:numel(listing) 
+for idx=240:1:numel(listing)-30
     fprintf('Image Filename: %s\n', listing(idx).name);
     % Load in an image and get its size
     img_file = fullfile(img_path, '/', listing(idx).name);
     img = imread(img_file);
+    
+    img = fliplr(imrotate(img, 90));   
     
     [img_h, img_w, img_c] = size(img);
     % Test for number of channels. Create gray image if more than 1.
@@ -86,7 +88,7 @@ for idx=1:numel(listing)
         {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
 
     % Reduce size of image to find blur count
-    [img,startX] = ReduceImg(rng,img);
+    [img,startX] = ReduceImg(rng, zoom, img);
     %img = img(1:350,113:472);
     [~, img_wR] = size(img);
 
@@ -119,7 +121,7 @@ for idx=1:numel(listing)
         hold on
         legendL = "selected image line";
 
-        intv = 20;
+        intv = 4;
         [xC,yC, numBlurPix,startPix] = CalculateBlurCount(img_line, intv);
 
         % Plot curve
@@ -132,8 +134,8 @@ for idx=1:numel(listing)
         legendL = [legendL; "smoothed curve"];
         
         % Plot locations of blurred pixels 
-        stem(startX + startPix-1,200,'filled','r')
-        stem((startX+startPix+numBlurPix-2),200,'filled','c')
+        stem(startX + startPix-1,255,'filled','r')
+        stem((startX+startPix+numBlurPix-2),255,'filled','c')
         plot([1,512],[img_line(startPix),img_line(startPix)],'r')
         plot([1,512],[img_line(startPix+numBlurPix-1),img_line(startPix+numBlurPix-1)],'c')
         hold on
@@ -149,7 +151,7 @@ for idx=1:numel(listing)
         xlabel("Pixel Number")
         ylabel("Pixel Value")
         ylim([0,255])
-        xlim([startX,startX+350-1])
+        xlim([x(1),x(end)])
         grid on
         legend(legendL);
         hold off

@@ -69,10 +69,6 @@ for zoom = zoomV
                     [iMx,mx,iMn,mn] = FindMaxMin(maxgRw,intV,img_maxgCol, searchVal);
                 end
 
-                if focus == 48150
-                    flag = true;
-                end
-
                 % Find blur count
                 blurPix(ib) = CalculateBlur(img_maxgCol, iMn, iMx, mn, mx);
                 maxgradV(ib) = maxgrad;
@@ -169,20 +165,20 @@ for zoom = zoomV
     
 end
 
-                figure()
-                plot(1:img_h, img_maxgCol, '-b')
-                hold on
-                plot(maxgRw, img_maxgCol(maxgRw), 'r*')
-                hold on
-                plot(iMn, mn, 'g*')
-                hold on
-                plot(iMx, mx, 'c*')
-                xlabel("Pixel Number for Column")
-                ylabel("Pixel Value")
-                grid on
-                xticks(0:10:img_h) 
-                xlim([1,img_h])
-                ylim([0,255])
-                
-                hold off
-        
+% figure()
+% plot(1:img_h, img_maxgCol, '-b')
+% hold on
+% plot(maxgRw, img_maxgCol(maxgRw), 'r*')
+% hold on
+% plot(iMn, mn, 'g*')
+% hold on
+% plot(iMx, mx, 'c*')
+% xlabel("Pixel Number for Column")
+% ylabel("Pixel Value")
+% grid on
+% xticks(0:10:img_h) 
+% xlim([1,img_h])
+% ylim([0,255])
+% 
+% hold off
+%         

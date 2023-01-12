@@ -4,14 +4,14 @@ clear
 zoom = 5000;
 rangeV= 600:50:1000;
 % Read in the heatmap
-filen = "C:\Data\JSSAP\results_CB_focusRange\tbHeatmap5_" + num2str(zoom) + ".csv";
+filen = "C:\Data\JSSAP\Results_new_CB\tbHeatmap110_" + num2str(zoom) + ".csv";
 TbHeatm = readtable(filen);
 
 
 % plots
 p=figure(100);
 legendTxt = [];
-f = 48180:5:48190;%;47990;
+f = 48150:5:48155;%;47990;
 %plotColors = jet(length(f));
 plotColors = ["#0072BD", "#D95319", "#EDB120", "#7E2F8E", "#77AC30","#4DBEEE","#A2142F","#22AC30"];
 for i = 1:length(f)
@@ -30,7 +30,7 @@ xlim([rangeV(1),rangeV(end)])
 ylim([4,10])
 grid on
 hold off
-fileOut = "C:\Data\JSSAP\results_CB_focusRange\p5_z" + num2str(zoom) + "_f" + num2str(f(1)) + ".png";
+fileOut = "C:\Data\JSSAP\Results_new_CB\p11_z" + num2str(zoom) + "_f" + num2str(f(1)) + ".png";
 exportgraphics(p,fileOut,'Resolution',300)
 
 % Notes:

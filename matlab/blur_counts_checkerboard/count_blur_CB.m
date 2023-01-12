@@ -46,73 +46,84 @@ for zoom = zoomV
             % Find max change over intV pixels.
             % For each image, look at different intV sizes 5,6,7 and take
             % the mean blurcount of all gradients. Find their average.
-            intVs = [5,6,7];
-            blurPix = [];
-            maxgradV = [];
+ 
             ib = 1;
-            for intV = intVs
                 
-                %% For each column in image, find column with maximum gradient over intV pixels
-                % The maximum gradient represents the change from
-                % black/white or white/black in checkerboard image.  The
-                % maximum may indicate the least turbulence, so that the
-                % blur in this region is due only to focus and range.
-                [img_maxgCol,maxgrad,maxgRw,maxgCol] = FindMaxGradient(img, intV);
-                               
-                searchVal = 20;
-                if maxgRw + searchVal+1 > img_h
-                    %finalmx = 256;
-                    continue;
-                elseif maxgRw-searchVal-1 < 1
-                    continue
-                else
-                    [iMx,mx,iMn,mn] = FindMaxMin(maxgRw,intV,img_maxgCol, searchVal);
+            %% For each column in image, find column with maximum gradient over intV pixels
+            % The maximum gradient represents the change from
+            % black/white or white/black in checkerboard image.  The
+            % maximum may indicate the least turbulence, so that the
+            % blur in this region is due only to focus and range.
+            highest = 5;
+            intV = 7;
+            maxgradV = FindMaxGradient(img, intV, highest);
+            if maxgradV(:,3) < gradL
+                continue;
+            else
+                blurPix = [];
+    
+                for i = 1:height(maxgradV)
+                    %maxgCol, maxgRw, maxgrad = maxgradV(i,:);
+                    maxgCol = maxgradV(i,1);
+                    maxgRw = maxgradV(i,2);
+                    maxgrad = maxgradV(i,3);
+                    direction = maxgradV(i,4);
+    
+                    img_maxgCol = img(:,maxgCol); % maxgRw will be darker (low pix val)
+    
+                    searchVal = 20;
+                    if maxgRw + searchVal + 1 > img_h
+                        %finalmx = 256;
+                        continue;
+                    elseif maxgRw-searchVal-1 < 1
+                        continue
+                    else
+                        [iMx,mx,iMn,mn] = FindMaxMin(maxgRw, intV, img_maxgCol, searchVal, direction);
+                    end
+                
+                    % Find blur count
+                    blurPix(ib) = CalculateBlur(img_maxgCol, iMn, iMx, mn, mx, direction);
+                    %maxgradV(ib) = maxgrad;
+                    ib=ib+1;
+    
+%                     figure()
+%                     plot(1:img_h, img_maxgCol, '-b')
+%                     hold on
+%                     plot(maxgRw, img_maxgCol(maxgRw), 'r*')
+%                     hold on
+%                     plot(iMn, mn, 'g*')
+%                     hold on
+%                     plot(iMx, mx, 'c*')
+%                     xlabel("Pixel Number for Column")
+%                     ylabel("Pixel Value")
+%                     grid on
+%                     xticks(0:10:img_h) 
+%                     xlim([1,img_h])
+%                     ylim([0,255])
+%                     
+%                     hold off
+%                     close all
                 end
-
-                % Find blur count
-                blurPix(ib) = CalculateBlur(img_maxgCol, iMn, iMx, mn, mx);
-                maxgradV(ib) = maxgrad;
-                ib=ib+1;
-
-%                 figure()
-%                 plot(1:img_h, img_maxgCol, '-b')
-%                 hold on
-%                 plot(maxgRw, img_maxgCol(maxgRw), 'r*')
-%                 hold on
-%                 plot(iMn, mn, 'g*')
-%                 hold on
-%                 plot(iMx, mx, 'c*')
-%                 xlabel("Pixel Number for Column")
-%                 ylabel("Pixel Value")
-%                 grid on
-%                 xticks(0:10:img_h) 
-%                 xlim([1,img_h])
-%                 ylim([0,255])
-%                 
-%                 hold off
-%                 close all
-
-              
             end
+               
             if mean(blurPix) > 0
-                if mean(maxgradV) > gradL
-                    Tb(indT,["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd"]) = ...
-                        {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
-                    Tb.BlurCount(indT) = mean(blurPix);
-                    Tb.MaxGrad(indT) = maxgrad;
-                    indT = indT+1;
-                end
+                Tb(indT,["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd"]) = ...
+                    {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
+                Tb.BlurCount(indT) = mean(blurPix);
+                Tb.MaxGrad(indT) = mean(maxgradV(:,3));
+                indT = indT+1;
             end
-            
         end
+            
     end
+    
 
     %% Heatmap
     % Round focus values to closest multiple of 5.
     Tb.Focus5 = 5*floor(Tb.Focus/5);
     % Remove unused rows in table
     Tb = Tb(Tb.Range > 0,:);
-    %writetable(Tb, data_root + "results_CB_focusRange\tb120_" + num2str(zoom) + ".csv");
+    writetable(Tb, data_root + "Results_new_CB\tb110_" + num2str(zoom) + ".csv");
     
     % Create heatmap table since there are many images with same focus
     focusVals = unique(Tb.Focus5);
@@ -135,7 +146,7 @@ for zoom = zoomV
     end
     % Remove unused rows in table
     TbHeatm = TbHeatm(TbHeatm.Range > 0,:);
-    %writetable(TbHeatm, data_root + "results_CB_focusRange\tbHeatmap120_" + num2str(zoom) + ".csv");
+    writetable(TbHeatm, data_root + "Results_new_CB\tbHeatmap110_" + num2str(zoom) + ".csv");
     
     fig = figure();
     h = heatmap(TbHeatm, 'Range', 'Focus5', 'ColorVariable', 'BlurPix','Colormap', parula);
@@ -143,10 +154,10 @@ for zoom = zoomV
     ylabel("Focus Interval")
     title("Zoom " + num2str(zoom) + ": Blurred Pixels per Range and Focus Interval")
     set(gcf,'position',([100,100,1100,1500]),'color','w')
-    fileOut = data_root + "results_CB_focusRange\hm120_" + num2str(zoom) + ".png";
-    %exportgraphics(h,fileOut,'Resolution',300)
-    fileFig = data_root + "results_CB_focusRange\hm120_" + num2str(zoom) + ".fig";
-    %savefig(fig, fileFig)
+    fileOut = data_root + "Results_new_CB\hm110_" + num2str(zoom) + ".png";
+    exportgraphics(h,fileOut,'Resolution',300)
+    fileFig = data_root + "Results_new_CB\hm110_" + num2str(zoom) + ".fig";
+    savefig(fig, fileFig)
 
 %     %% Create output matrix from TbHeatm
 % 

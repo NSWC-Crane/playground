@@ -5,7 +5,7 @@ clc
 rangeV = 600:50:1000;
 %zoomV = [2000,2500,3000,3500,4000];
 zoomV = 5000;
-gradL = 110;
+gradL = 110; % Required number between pixel values of max and min.
 
 %% Setup data directories
 platform = string(getenv("PLATFORM"));
@@ -19,7 +19,7 @@ end
 
 %% Loop through images by zoom and range
 for zoom = zoomV
-    %% Set up a table to collect results 
+    %% Set up a table to collect results by zoom value
     numFiles = 20000;
     col_label = ["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd","BlurCount"];
     vartypes = {'string','string','uint16','uint16','uint16','uint16','uint16','double'};
@@ -27,6 +27,7 @@ for zoom = zoomV
     Tb.Properties.VariableNames = col_label.';
     indT = 1;
     for rng = rangeV
+        % Get filename based on zoom and range values
         img_path = data_root + "z" + num2str(zoom) + "\" + num2str(rng);
         image_ext = '*.png';
         listing = dir(strcat(img_path, '/', image_ext));
@@ -39,41 +40,36 @@ for zoom = zoomV
             %% Image pre-processing
             img_file = fullfile(img_path, '/', listing(idx).name);
             img = double(imread(img_file));
-            img = img(:,:,2);
+            img = img(:,:,2); % Green channel
             [img_h,img_w] = size(img);
             
-            %% Find max gradent in pixel values
-            % Find max change over intV pixels.
-            % For each image, look at different intV sizes 5,6,7 and take
-            % the mean blurcount of all gradients. Find their average.
- 
-            ib = 1;
-                
-            %% For each column in image, find column with maximum gradient over intV pixels
+            %% Find max gradent in pixel values by column of the image
+            % Determine the columns with the highest gradients over intV
+            % pixels.
             % The maximum gradient represents the change from
             % black/white or white/black in checkerboard image.  The
-            % maximum may indicate the least turbulence, so that the
+            % maximum gradient may indicate the least turbulence, so that the
             % blur in this region is due only to focus and range.
-            highest = 5;
-            intV = 7;
-            maxgradV = FindMaxGradient(img, intV, highest);
-            if maxgradV(:,3) < gradL
+            highestNum = 3; % Indicates number of columns that will be averaged for blur number
+            intV = 7; % Consider 2 image sizes 256x256 and 200x200
+            indB = 1;
+            maxgradV = FindMaxGradient(img, intV, highestNum);
+
+            % Test gradient size.  If less than gradL, go to next image.
+            if maxgradV(:,3) < gradL 
                 continue;
             else
                 blurPix = [];
-    
                 for i = 1:height(maxgradV)
-                    %maxgCol, maxgRw, maxgrad = maxgradV(i,:);
                     maxgCol = maxgradV(i,1);
                     maxgRw = maxgradV(i,2);
                     maxgrad = maxgradV(i,3);
                     direction = maxgradV(i,4);
     
-                    img_maxgCol = img(:,maxgCol); % maxgRw will be darker (low pix val)
+                    img_maxgCol = img(:,maxgCol); 
     
                     searchVal = 20;
                     if maxgRw + searchVal + 1 > img_h
-                        %finalmx = 256;
                         continue;
                     elseif maxgRw-searchVal-1 < 1
                         continue
@@ -82,9 +78,8 @@ for zoom = zoomV
                     end
                 
                     % Find blur count
-                    blurPix(ib) = CalculateBlur(img_maxgCol, iMn, iMx, mn, mx, direction);
-                    %maxgradV(ib) = maxgrad;
-                    ib=ib+1;
+                    [blurPix(indB), indMn, indMx] = CalculateBlur(img_maxgCol, iMn, iMx, mn, mx, direction);
+                    indB=indB+1;
     
 %                     figure()
 %                     plot(1:img_h, img_maxgCol, '-b')
@@ -93,7 +88,17 @@ for zoom = zoomV
 %                     hold on
 %                     plot(iMn, mn, 'g*')
 %                     hold on
-%                     plot(iMx, mx, 'c*')
+%                     plot(iMx, mx, 'm*')
+%                     hold on
+%                     if direction == 1
+%                         plot([1,img_h], [img_maxgCol(iMn+indMn-1),img_maxgCol(iMn+indMn-1)],'g')
+%                         hold on
+%                         plot([1,img_h], [img_maxgCol(iMn+indMx-1),img_maxgCol(iMn+indMx-1)],'m')
+%                     else
+%                         plot([1,img_h], [img_maxgCol(iMn-indMn+1),img_maxgCol(iMn-indMn+1)],'g')
+%                         hold on
+%                         plot([1,img_h], [img_maxgCol(iMn-indMx+1),img_maxgCol(iMn-indMx+1)],'m')
+%                     end
 %                     xlabel("Pixel Number for Column")
 %                     ylabel("Pixel Value")
 %                     grid on
@@ -113,12 +118,10 @@ for zoom = zoomV
                 Tb.MaxGrad(indT) = mean(maxgradV(:,3));
                 indT = indT+1;
             end
-        end
-            
+        end            
     end
-    
 
-    %% Heatmap
+    %% Create Heatmap
     % Round focus values to closest multiple of 5.
     Tb.Focus5 = 5*floor(Tb.Focus/5);
     % Remove unused rows in table
@@ -176,20 +179,3 @@ for zoom = zoomV
     
 end
 
-% figure()
-% plot(1:img_h, img_maxgCol, '-b')
-% hold on
-% plot(maxgRw, img_maxgCol(maxgRw), 'r*')
-% hold on
-% plot(iMn, mn, 'g*')
-% hold on
-% plot(iMx, mx, 'c*')
-% xlabel("Pixel Number for Column")
-% ylabel("Pixel Value")
-% grid on
-% xticks(0:10:img_h) 
-% xlim([1,img_h])
-% ylim([0,255])
-% 
-% hold off
-%         

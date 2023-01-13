@@ -91,13 +91,13 @@ for zoom = zoomV
 %                     plot(iMx, mx, 'm*')
 %                     hold on
 %                     if direction == 1
-%                         plot([1,img_h], [img_maxgCol(iMn+indMn-1),img_maxgCol(iMn+indMn-1)],'g')
+%                         plot([iMn+indMn-1,iMn+indMn-1],[1,img_h],'g')
 %                         hold on
-%                         plot([1,img_h], [img_maxgCol(iMn+indMx-1),img_maxgCol(iMn+indMx-1)],'m')
+%                         plot([iMn+indMx-1,iMn+indMx-1],[1,img_h],'m')
 %                     else
-%                         plot([1,img_h], [img_maxgCol(iMn-indMn+1),img_maxgCol(iMn-indMn+1)],'g')
+%                         plot([iMn-indMn+1,iMn-indMn+1],[1,img_h],'g')
 %                         hold on
-%                         plot([1,img_h], [img_maxgCol(iMn-indMx+1),img_maxgCol(iMn-indMx+1)],'m')
+%                         plot([iMn-indMx+1,iMn-indMx+1], [1,img_h],'m')
 %                     end
 %                     xlabel("Pixel Number for Column")
 %                     ylabel("Pixel Value")
@@ -126,7 +126,7 @@ for zoom = zoomV
     Tb.Focus5 = 5*floor(Tb.Focus/5);
     % Remove unused rows in table
     Tb = Tb(Tb.Range > 0,:);
-    writetable(Tb, data_root + "Results_new_CB\tb110_" + num2str(zoom) + ".csv");
+    writetable(Tb, data_root + "Results_new_CB\tb110N_" + num2str(zoom) + ".csv");
     
     % Create heatmap table since there are many images with same focus
     focusVals = unique(Tb.Focus5);
@@ -149,7 +149,7 @@ for zoom = zoomV
     end
     % Remove unused rows in table
     TbHeatm = TbHeatm(TbHeatm.Range > 0,:);
-    writetable(TbHeatm, data_root + "Results_new_CB\tbHeatmap110_" + num2str(zoom) + ".csv");
+    writetable(TbHeatm, data_root + "Results_new_CB\tbHeatmap110N_" + num2str(zoom) + ".csv");
     
     fig = figure();
     h = heatmap(TbHeatm, 'Range', 'Focus5', 'ColorVariable', 'BlurPix','Colormap', parula);
@@ -157,9 +157,9 @@ for zoom = zoomV
     ylabel("Focus Interval")
     title("Zoom " + num2str(zoom) + ": Blurred Pixels per Range and Focus Interval")
     set(gcf,'position',([100,100,1100,1500]),'color','w')
-    fileOut = data_root + "Results_new_CB\hm110_" + num2str(zoom) + ".png";
+    fileOut = data_root + "Results_new_CB\hm110N_" + num2str(zoom) + ".png";
     exportgraphics(h,fileOut,'Resolution',300)
-    fileFig = data_root + "Results_new_CB\hm110_" + num2str(zoom) + ".fig";
+    fileFig = data_root + "Results_new_CB\hm110N_" + num2str(zoom) + ".fig";
     savefig(fig, fileFig)
 
 %     %% Create output matrix from TbHeatm

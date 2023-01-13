@@ -22,7 +22,7 @@ clearvars
 %% Set constants
 slice_rows = [46,48,50];
 rangeV = 510:10:750;
-zoomV = 2000;
+zoomV = 3000;
 numFilesPerDir = 301;
 
 %% Setup data directories
@@ -68,16 +68,14 @@ for zoom = zoomV
             %fprintf('Image Filename: %s\n', listing(idx).name);
             % Load in an image and get its size
             img_file = fullfile(img_path, '/', listing(idx).name);
-            img = imread(img_file);
+            img = double(imread(img_file));
             
             img = fliplr(imrotate(img, 90));   
             
             [img_h, img_w, img_c] = size(img);
             % Test for number of channels. Create gray image if more than 1.
             if(img_c > 1)
-                img = double(rgb2gray(img));
-            else
-                img = double(img);
+                img = img(:,:,2);
             end
             % Add data to Table
             focus = FindFocus(listing(idx).name);
@@ -119,7 +117,7 @@ for zoom = zoomV
     end
 end
 % %% Save Tb table
-filename = data_root + "Rework2\TbZ" + num2str(zoom) +  ".csv";
+filename = data_root + "Rework3\TbZ" + num2str(zoom) +  ".csv";
 writetable(Tb,filename);
 
 %% Create heatmap
@@ -129,8 +127,8 @@ writetable(Tb,filename);
 % intvF = 10;
 
 intvF = 10;
-startFocus = 46800;
-endFocus = 47800;
+startFocus = 47500;
+endFocus = 48350;
 zoom = zoomV;
 
 focusI = startFocus:intvF:endFocus;
@@ -148,7 +146,7 @@ for rng = rangeV
         indH = indH + 1;
     end
 end
-writetable(TbHeatm, data_root + "Rework2\TbHeatmapZ" + num2str(zoom) + ".csv");
+writetable(TbHeatm, data_root + "Rework3\TbHeatmapZ" + num2str(zoom) + ".csv");
 
 fig = figure();
 h = heatmap(TbHeatm, 'Range', 'FocusItv', 'ColorVariable', 'BlurPix','Colormap', parula);
@@ -156,13 +154,13 @@ xlabel("Range")
 ylabel("Focus Interval")
 title("Zoom " + num2str(zoom) + ": Blurred Pixels per Range and Focus Interval")
 set(gcf,'position',([100,100,1100,1500]),'color','w')
-fileOut = data_root + "Rework2\Heatmap" + num2str(zoom) + ".png";
+fileOut = data_root + "Rework3\Heatmap" + num2str(zoom) + ".png";
 exportgraphics(h,fileOut,'Resolution',300)
-fileFig = data_root + "Rework2\Heatmap" + num2str(zoom) + ".fig";
+fileFig = data_root + "Rework3\Heatmap" + num2str(zoom) + ".fig";
 savefig(fig, fileFig)
 
 % %% Create output matrix
-% fileMat = data_root + "Rework\Nsample_blur_radius_data2_z" + num2str(zoom) + ".mat";
+% fileMat = data_root + "Rework3\Nsample_blur_radius_data2_z" + num2str(zoom) + ".mat";
 % for rInd = 1:length(rangeV)
 %     for fInd = 1:length(focusI)-1
 %         indB = find(TbHeatm.Range == rangeV(rInd) & TbHeatm.FocusItv == focusI(fInd));

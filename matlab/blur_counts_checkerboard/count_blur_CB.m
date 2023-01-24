@@ -2,7 +2,8 @@
 clear
 clc
 
-rangeV = 600:50:1000;
+rangeV = 600:50:700;
+%rangeV = 600:50:1000;
 %zoomV = [2000,2500,3000,3500,4000];
 zoomV = 5000;
 gradL = 110; % Required number between pixel values of max and min.

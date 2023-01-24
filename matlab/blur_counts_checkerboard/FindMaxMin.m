@@ -18,6 +18,8 @@ function [iMx,mx,iMn,mn] = FindMaxMin(maxgRw,intV,img_maxgCol, searchVal, direct
 testPix = 5; % After finding max or min, the pixel number to test to see if
 %           a max or min exists closeby.
 
+img_h = length(img_maxgCol);
+
 if direction == 1 % Up
     % Find max
     finalmx = maxgRw + searchVal+1; 
@@ -26,10 +28,12 @@ if direction == 1 % Up
     iMx = maxgRw+chgImx-1+intV-1;
     mx = img_maxgCol(iMx);
     % Test max: check next 4 pixels (in case a hump in slope)
-    [testmx, itestMx] = max(img_maxgCol(iMx+1:iMx+testPix));
-    if img_maxgCol(itestMx + iMx) > img_maxgCol(iMx)
-        iMx = itestMx + iMx;
-        mx = testmx; 
+    if (iMx + 1 <= img_h) && (iMx + testPix <= img_h)
+        [testmx, itestMx] = max(img_maxgCol(iMx+1:iMx+testPix));
+        if img_maxgCol(itestMx + iMx) > img_maxgCol(iMx)
+            iMx = itestMx + iMx;
+            mx = testmx; 
+        end
     end
     
     % Find min
@@ -39,12 +43,13 @@ if direction == 1 % Up
     iMn = maxgRw-chgImn+1;
     mn = img_maxgCol(iMn);
     % Test min: check previous 4 pixels (in case a hump in slope)
-    [testmn, itestMn] = min(img_maxgCol(iMn-1:-1:iMn-testPix));
-    if img_maxgCol(iMn-itestMn) < img_maxgCol(iMn)
-        iMn = iMn - itestMn; 
-        mn = testmn; 
+    if (iMn - 1 >= 1) && (iMn-testPix >= 1)
+        [testmn, itestMn] = min(img_maxgCol(iMn-1:-1:iMn-testPix));
+        if img_maxgCol(iMn-itestMn) < img_maxgCol(iMn)
+            iMn = iMn - itestMn; 
+            mn = testmn; 
+        end
     end
-
 else % Down (direction == 0)
     % Find max
     finalmx = maxgRw-searchVal-1;
@@ -53,10 +58,12 @@ else % Down (direction == 0)
     iMx = maxgRw-chgImx+1;
     mx = img_maxgCol(iMx);
     % Test max: check previous 4 pixels (in case a hump in slope)
-    [testmx, itestMx] = max(img_maxgCol(iMx-1:-1:iMx-testPix));
-    if img_maxgCol(iMx - itestMx) > img_maxgCol(iMx)
-        iMx = iMx - itestMx;
-        mx = testmx;
+    if (iMx - 1 >= 1) && (iMx-testPix >= 1)
+        [testmx, itestMx] = max(img_maxgCol(iMx-1:-1:iMx-testPix));
+        if img_maxgCol(iMx - itestMx) > img_maxgCol(iMx)
+            iMx = iMx - itestMx;
+            mx = testmx;
+        end
     end
    
     % Find min
@@ -66,10 +73,12 @@ else % Down (direction == 0)
     iMn = maxgRw+chgImn-1+intV-1;
     mn = img_maxgCol(iMn);
     % Test min: check next 4 pixels (in case a hump in slope)
-    [testmn, itestMn] = min(img_maxgCol(iMn+1:iMn+testPix));
-    if img_maxgCol(itestMn + iMn) < img_maxgCol(iMn)
-        iMn = itestMn + iMn;
-        mn = testmn;
+    if (iMn + 1 <= img_h) && (iMn + testPix <= img_h)
+        [testmn, itestMn] = min(img_maxgCol(iMn+1:iMn+testPix));
+        if img_maxgCol(itestMn + iMn) < img_maxgCol(iMn)
+            iMn = itestMn + iMn;
+            mn = testmn;
+        end
     end
 end
 

@@ -17,6 +17,8 @@ else
     data_root = "C:\Data\JSSAP\";
 end
 
+dirOut = data_root + "Results_new_CB\";
+
 %% Loop through images by zoom and range
 for zoom = zoomV
     %% Set up a table to collect results by zoom value
@@ -126,7 +128,7 @@ for zoom = zoomV
     Tb.Focus5 = 5*floor(Tb.Focus/5);
     % Remove unused rows in table
     Tb = Tb(Tb.Range > 0,:);
-    writetable(Tb, data_root + "Results_new_CB\tb110N_" + num2str(zoom) + ".csv");
+    %writetable(Tb, dirOut + "tbV_" + num2str(zoom) + ".csv");
     
     % Create heatmap table since there are many images with same focus
     focusVals = unique(Tb.Focus5);
@@ -149,7 +151,7 @@ for zoom = zoomV
     end
     % Remove unused rows in table
     TbHeatm = TbHeatm(TbHeatm.Range > 0,:);
-    writetable(TbHeatm, data_root + "Results_new_CB\tbHeatmap110N_" + num2str(zoom) + ".csv");
+    %writetable(TbHeatm, dirOut + "tbHeatmapV_" + num2str(zoom) + ".csv");
     
     fig = figure();
     h = heatmap(TbHeatm, 'Range', 'Focus5', 'ColorVariable', 'BlurPix','Colormap', parula);
@@ -157,12 +159,12 @@ for zoom = zoomV
     ylabel("Focus Interval")
     title("Zoom " + num2str(zoom) + ": Blurred Pixels per Range and Focus Interval")
     set(gcf,'position',([100,100,1100,1500]),'color','w')
-    fileOut = data_root + "Results_new_CB\hm110N_" + num2str(zoom) + ".png";
-    exportgraphics(h,fileOut,'Resolution',300)
-    fileFig = data_root + "Results_new_CB\hm110N_" + num2str(zoom) + ".fig";
-    savefig(fig, fileFig)
+%     fileOut = dirOut + "hmV_" + num2str(zoom) + ".png";
+%     exportgraphics(h,fileOut,'Resolution',300)
+%     fileFig = dirOut + "hV_" + num2str(zoom) + ".fig";
+%     savefig(fig, fileFig)
 
-%     %% Create output matrix from TbHeatm
+%     %% Create output matrix .mat from TbHeatm
 % 
 %     fileMat = data_root + "results_CB_focusRange\Nsample_blur_radius_data5_z" + num2str(zoom) + ".mat";
 %     for rInd = 1:length(rangeV)

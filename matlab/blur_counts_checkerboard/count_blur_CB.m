@@ -1,3 +1,9 @@
+% This program calcuates the blur count in the checkerboard images.
+% In each image, it finds the columns with the maximum gradients
+% (indicating the transition from black to white or white to black).
+% Then it finds the max and min values associated with the gradients.
+% Finally, it finds the blur count between the max and min values and
+% averages the values among the highest gradients in the image.
 
 clear
 clc
@@ -23,10 +29,10 @@ dirOut = data_root + "Results_new_CB\";
 %% Loop through images by zoom and range
 for zoom = zoomV
     %% Set up a table to collect results by zoom value
-    numFiles = 20000;
+    numRows = 20000;
     col_label = ["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd","BlurCount"];
     vartypes = {'string','string','uint16','uint16','uint16','uint16','uint16','double'};
-    Tb = table('Size', [numFiles, length(col_label)], 'VariableTypes', vartypes);
+    Tb = table('Size', [numRows, length(col_label)], 'VariableTypes', vartypes);
     Tb.Properties.VariableNames = col_label.';
     indT = 1;
     for rng = rangeV
@@ -58,16 +64,17 @@ for zoom = zoomV
             indB = 1;
             maxgradV = FindMaxGradient(img, intV, highestNum);
 
-            % Test gradient size.  If less than gradL, go to next image.
+            % Test gradient sizes.  If less than gradL, go to next image.
             if maxgradV(:,3) < gradL 
                 continue;
             else
                 blurPix = [];
+                % For each gradient selected in image, find the blur count
                 for i = 1:height(maxgradV)
                     maxgCol = maxgradV(i,1);
                     maxgRw = maxgradV(i,2);
                     maxgrad = maxgradV(i,3);
-                    direction = maxgradV(i,4);
+                    posSlope = maxgradV(i,4);
     
                     img_maxgCol = img(:,maxgCol); 
     
@@ -77,13 +84,15 @@ for zoom = zoomV
                     elseif maxgRw-searchVal-1 < 1
                         continue
                     else
-                        [iMx,mx,iMn,mn] = FindMaxMin(maxgRw, intV, img_maxgCol, searchVal, direction);
+                        [iMx,mx,iMn,mn] = FindMaxMin(maxgRw, intV, img_maxgCol, searchVal, posSlope);
                     end
                 
                     % Find blur count
-                    [blurPix(indB), indMn, indMx] = CalculateBlur(img_maxgCol, iMn, iMx, mn, mx, direction);
+                    [blurPix(indB), indMn, indMx] = CalculateBlur(img_maxgCol, iMn, iMx, mn, mx, posSlope);
                     indB=indB+1;
-    
+                    
+                    % Plot the column in the image with the gradient max, min,
+                    % and blur count
 %                     figure()
 %                     plot(1:img_h, img_maxgCol, '-b')
 %                     hold on
@@ -93,11 +102,11 @@ for zoom = zoomV
 %                     hold on
 %                     plot(iMx, mx, 'm*')
 %                     hold on
-%                     if direction == 1
+%                     if posSlope == 1 % Slope of gradient is positive
 %                         plot([iMn+indMn-1,iMn+indMn-1],[1,img_h],'g')
 %                         hold on
 %                         plot([iMn+indMx-1,iMn+indMx-1],[1,img_h],'m')
-%                     else
+%                     else % Slope of gradient is negative
 %                         plot([iMn-indMn+1,iMn-indMn+1],[1,img_h],'g')
 %                         hold on
 %                         plot([iMn-indMx+1,iMn-indMx+1], [1,img_h],'m')
@@ -113,7 +122,8 @@ for zoom = zoomV
 %                     close all
                 end
             end
-               
+              
+            % Calculate mean blur count of all gradients in image
             if mean(blurPix) > 0
                 Tb(indT,["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd"]) = ...
                     {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
@@ -124,7 +134,7 @@ for zoom = zoomV
         end            
     end
 
-    %% Create Heatmap
+    %% Create Heatmap by range and focus with color indicating blur count
     % Round focus values to closest multiple of 5.
     Tb.Focus5 = 5*floor(Tb.Focus/5);
     % Remove unused rows in table

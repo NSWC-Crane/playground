@@ -9,10 +9,6 @@ function [maxgradV] = FindMaxGradient(img, intV, highest )
 maxgradV = zeros(img_w,4);
               
 % Test each column in image for largest gradient over intV
-% Find it with lowest pixel value (dark color) first
-% img_vline(rw,1) will be darker color (lower pixel value like 60)
-% img_vline(rw+intv,1) will be lighter color (higher pixel value like 200)
-
 % Find max gradient in each column and collect information
 for col = 1:img_w 
     img_vline = img(:,col);
@@ -24,21 +20,21 @@ for col = 1:img_w
             maxgRw = rw;
             maxgCol = col;
             if img_vline(rw) < img_vline(rw+intV)
-                direction = 1;
+                posSlope = 1; % Slope of gradient is positive
             else
-                direction = 0;
+                posSlope = 0; % Slope of gradient is negative
             end
         end
     end
-    maxgradV(col,:) = [maxgCol, maxgRw, maxgrad, direction];  
+    maxgradV(col,:) = [maxgCol, maxgRw, maxgrad, posSlope];  
 end
 
-% Return the columns with the highest grads
+% Return the columns with the highest gradients
 maxgradV = sortrows(maxgradV, 3, 'descend');
 % Return maxgradV
 % After sorting, return the top rows with the highest gradient.
-% The columns are row index, columne index, change in pixel value, and
-% direction.
+% The columns of maxgradV are row index, column index, change in pixel value, and
+% whether or not slope of gradient is positive.
 maxgradV = maxgradV(1:highest,:);
 
 end

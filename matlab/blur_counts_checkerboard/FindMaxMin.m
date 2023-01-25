@@ -1,4 +1,4 @@
-function [iMx,mx,iMn,mn] = FindMaxMin(maxgRw,intV,img_maxgCol, searchVal, direction)
+function [iMx,mx,iMn,mn] = FindMaxMin(maxgRw,intV,img_maxgCol, searchVal, posSlope)
 
 % Find max and min on both the up slope and down slope.
 % Scan after maxgRw and determine when the value starts to decrease/increase.
@@ -8,19 +8,21 @@ function [iMx,mx,iMn,mn] = FindMaxMin(maxgRw,intV,img_maxgCol, searchVal, direct
 % intV: number of pixels evaluated for gradient
 % img_maxgCol: column of max gradient
 % maxgRw: row of start of max gradient (then it proceeds up or
-% down, depending on direction).
+% down, depending on direction of slope).
 % searchVal: the pixel number used to search for max or min
-% direction: Direction of max gradient 1:up, 0:down
+% posSlope: Direction of max gradient 1:up or positivie, 0:down or negative
 
 % Return
 % iMx, mx: index of maximum, pixel value of maximum
 % iMn, mn: index of minimum, pixel value of minimum
+
+% Some slopes have humps prior to max or min - test to find real max,min
 testPix = 5; % After finding max or min, the pixel number to test to see if
 %           a max or min exists closeby.
 
 img_h = length(img_maxgCol);
 
-if direction == 1 % Up
+if posSlope == 1 % Up
     % Find max
     finalmx = maxgRw + searchVal+1; 
     mxVector = img_maxgCol(maxgRw+intV:finalmx)-img_maxgCol(maxgRw+intV-1:finalmx-1);
@@ -50,7 +52,7 @@ if direction == 1 % Up
             mn = testmn; 
         end
     end
-else % Down (direction == 0)
+else % Down (posSlope == 0)
     % Find max
     finalmx = maxgRw-searchVal-1;
     mxVector = img_maxgCol(maxgRw:-1:finalmx + 1) - img_maxgCol(maxgRw-1:-1:finalmx);

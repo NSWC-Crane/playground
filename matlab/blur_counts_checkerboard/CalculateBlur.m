@@ -13,7 +13,7 @@ function [blurpix,indMn, indMx] = CalculateBlur(img_maxgCol, iMn, iMx, mn, mx, p
 % Allowance for pixel value of max and min to deviate.
 % For example, if max value is 190, then neighbor values between 185 to 190
 % are eliminated from blur count.
-allow = 5; 
+allow = 3; 
 
 if posSlope == 1 % Slope of gradient is positive
 

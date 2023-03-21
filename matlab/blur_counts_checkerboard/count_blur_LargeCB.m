@@ -12,6 +12,10 @@ rangeV = 500:25:900;
 zoomV = 5500;
 gradL = 100; % Required number between pixel values of max and min.
 
+rangeV = 10:1:19;
+zoomV = 0;
+gradL = 80; % Required number between pixel values of max and min.
+
 % Options
 textureMatt = 1; % textureMatt:  matt is 1, glossy is 0
 if textureMatt == 1
@@ -25,7 +29,7 @@ saveHeatmap = 1;
 %% Setup data directories
 platform = string(getenv("PLATFORM"));
 if(platform == "Laptop")
-    data_root = "D:\data\turbulence\";
+    data_root = "D:\data\dfd\20230317\processed\";
 elseif (platform == "LaptopN")
     data_root = "C:\Projects\data\turbulence\";
 else   
@@ -45,7 +49,7 @@ for zoom = zoomV
     indT = 1;
     for rng = rangeV
         % Get filename based on zoom and range values
-        img_path = data_root + "z" + num2str(zoom) + "\0" + num2str(rng);
+        img_path = data_root + num2str(zoom, 'z%04d') + "/" + num2str(rng, '%04d');
         image_ext = '*.png';
         listing = dir(strcat(img_path, '/', image_ext));
         fprintf('IMAGE PATH: %s\n', img_path);
@@ -59,15 +63,20 @@ for zoom = zoomV
             img = double(imread(img_file));
             img = img(:,:,2); % Green channel
             [~,img_w1] = size(img);
-            if textureMatt == 1
-                endpix = floor(img_w1/2)-20;
-                img = img(:,1:endpix);
-                [img_h,img_w] = size(img);
-            else %texture is 'glossy'
-                srtpix = ceil(img_w1/2)+20;
-                img = img(:,srtpix:end);
-                [img_h,img_w] = size(img);
-            end
+%             if textureMatt == 1
+%                 endpix = floor(img_w1/2)-20;
+%                 img = img(:,1:endpix);
+%                 [img_h,img_w] = size(img);
+%             else %texture is 'glossy'
+%                 srtpix = ceil(img_w1/2)+20;
+%                 img = img(:,srtpix:end);
+%                 [img_h,img_w] = size(img);
+%             end
+            
+            srtpix = floor(img_w1/2)-100;
+            endpix = ceil(img_w1/2)+100;
+            img = img(:,srtpix:endpix);
+            [img_h,img_w] = size(img);
                         
             %% Find max gradent in pixel values by column of the image
             % Determine the columns with the highest gradients over intV
@@ -77,7 +86,7 @@ for zoom = zoomV
             % maximum gradient may indicate the least turbulence, so that the
             % blur in this region is due only to focus and range.
             highestNum = 3; % Number of rows that will be averaged for blur number
-            intV = 50; % Interval size in pixels that will be evaluated for gradient
+            intV = 100; % Interval size in pixels that will be evaluated for gradient
             indB = 1; % Index for blurpix matrix
             maxgradV = FindMaxGradient(img, intV, highestNum, "row");
 
@@ -87,7 +96,7 @@ for zoom = zoomV
             else
                 blurPix = [];
                 % For each gradient selected in image, find the blur count
-                for i = 1:height(maxgradV) 
+                for i = 1:size(maxgradV, 1) 
                     maxgRw = maxgradV(i,1);  % Row where max gradient starts
                     maxgCol = maxgradV(i,2); % Column where max gradient starts
                     maxgrad = maxgradV(i,3); % Gradient
@@ -202,7 +211,7 @@ for zoom = zoomV
     set(gcf,'position',([100,100,1100,1500]),'color','w')
     if saveHeatmap == 1
         fileOut = dirOut + "hm" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".png";
-        exportgraphics(h,fileOut,'Resolution',300)
+%         exportgraphics(h,fileOut,'Resolution',300)
         fileFig = dirOut + "hm" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".fig";
         savefig(fig, fileFig)
     end

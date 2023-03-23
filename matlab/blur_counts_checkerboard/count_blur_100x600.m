@@ -11,7 +11,7 @@ clc
 rangeV = 10:1:19;
 zoomV = 0;
 
-plotcurves = 0; % Plots the blur count curves gradient selected in each image
+plotcurves = 1; % Plots the blur count curves gradient selected in each image
 saveHeatmap = 1;
 
 %% Setup data directories
@@ -57,18 +57,16 @@ for zoom = zoomV
             %% Find max gradent in pixel values by column of the image
             % Determine the columns with the highest gradients over intV
             % pixels.
-            % The maximum gradient represents the change from
-            % black/white or white/black in checkerboard image.  The
-            % maximum gradient may indicate the least turbulence, so that the
+            % The maximum gradient may indicate the least turbulence, so that the
             % blur in this region is due only to focus and range.
             highestNum = 3; % Number of rows that will be averaged for blur number
             intV = 100; % Interval size in pixels that will be evaluated for gradient
             indB = 1; % Index for blurpix matrix
             maxgradV = FindMaxGradient(img, intV, highestNum, "row"); 
-            % The abouve function returns maxgradV(row,:) = [maxgRw, maxgCol, maxgrad, posSlope];  
+            % The above function returns maxgradV(row,:) = [maxgRw, maxgCol, maxgrad, posSlope];  
 
             blurPix = [];
-            %% For each gradient selected in image, find the blur count
+            %% For each row image selected in overall image, find the blur count
             for i = 1:size(maxgradV, 1) 
                 maxgRw = maxgradV(i,1);  % Row where max gradient starts
                 maxgCol = maxgradV(i,2); % Column where max gradient starts
@@ -78,13 +76,10 @@ for zoom = zoomV
                 % Looking at rows, not columns, in these images
                 img_maxgRow = img(maxgRw,:);
                 %% Find max and min in the row with the max gradient
-                
+                [iMx,mx,iMn,mn] = FindMaxMinCol(maxgCol, img_maxgRow);
 
-                [iMx,mx,iMn,mn] = FindMaxMinCol(maxgCol, intV, img_maxgRow);
-
-            
                 %% Find blur count
-                [blurPix(indB), indMn, indMx] = CalculateBlur(img_maxgRow, iMn, iMx, mn, mx, posSlope);
+                [blurPix(indB), indMn, indMx] = CalculateBlur2(iMn, iMx, mn, mx);
                 indB=indB+1;
                 
                 %% Plot the column in the image with the gradient max, min,
@@ -93,8 +88,8 @@ for zoom = zoomV
                     figure('WindowState','maximized')
                     plot(1:img_w, img_maxgRow, '-b')
                     hold on
-                    plot(maxgCol, img_maxgRow(maxgRw), 'r*')
-                    hold on
+%                     plot(maxgCol, img_maxgRow(maxgCol), 'r*')
+%                     hold on
                     plot(iMn, mn, 'g*')
                     hold on
                     plot(iMx, mx, 'm*')
@@ -199,28 +194,28 @@ for zoom = zoomV
     
 end
 
-% %% Smaller heatmaps
-% focSet1 = [20000,23000];
-% ix1 = TbHeatm.Focus5 >= focSet1(1,1) & TbHeatm.Focus5 < focSet1(1,2);
-% 
-% test = TbHeatm(ix1,:);
-% 
-% fig = figure();
-% h = heatmap(TbHeatm, 'Range', 'Focus5', 'ColorVariable', 'BlurPix','Colormap', parula);
-% xlabel("Range")
-% ylabel("Focus Interval")
-% title("Zoom " + num2str(zoom) + ": Blurred Pixels per Range and Focus Interval")
-% set(gcf,'position',([100,100,1100,1500]),'color','w')
-
 Tb.Focus20 = 20*floor(Tb.Focus/20);
 focusVals = unique(Tb.Focus20);
 startFocus = min(focusVals);
 endFocus = max(focusVals);
 focusI = startFocus:100:endFocus;
 
-
 figure()
-surf(Tb.Range, Tb.Focus20, Tb.BlurCount);
+rr= Tb.Range;
+ff = Tb.Focus20;
+bb = Tb.BlurCount;
+xx = min(rr):1:max(rr);
+yy = min(ff):20:max(ff);
+[X,Y] = ndgrid(xx,yy);
+%F = scatteredInterpolant(rr, ff, bb);
+Z = [rr ff bb];
+figure()
+surf(Z,'edgecolor', 'none');
+figure()
+mesh(Z);
+xlabel("Range")
+ylabel("Focus")
+zlabel("BlurCount")
 
 %%%%%%
 
@@ -232,8 +227,8 @@ focusI = startFocus:20:endFocus;
 %rowsH = (length(rangeV)) * length(focusI);
 rowsH = 20000;
 vartypesH = {'uint16', 'uint16', 'uint16', 'double'};
-TbHeatm = table('Size', [rowsH,4], 'VariableTypes', vartypesH);
-TbHeatm.Properties.VariableNames = ["Range", "Zoom", "Focus20", "BlurPix"];
+TbHeatm20 = table('Size', [rowsH,4], 'VariableTypes', vartypesH);
+TbHeatm20.Properties.VariableNames = ["Range", "Zoom", "Focus20", "BlurPix"];
 indH = 1;
 for rng = rangeV
     for fc = 1:length(focusI)
@@ -242,19 +237,19 @@ for rng = rangeV
         if bc>=1
             bc = cast(bc,"uint8");
         end
-        TbHeatm(indH,:) = {rng, zoom, focusI(fc), bc};
+        TbHeatm20(indH,:) = {rng, zoom, focusI(fc), bc};
         indH = indH + 1;
     end
 end
 % Remove unused rows in table
-TbHeatm = TbHeatm(TbHeatm.Range > 0,:);
+TbHeatm20 = TbHeatm20(TbHeatm20.Range > 0,:);
 if saveHeatmap == 1
    %writetable(TbHeatm, dirOut + "tbHeatmap" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".csv");
-    writetable(TbHeatm, dirOut + "tbHeatmap20_z" + num2str(zoom) + ".csv");
+    writetable(TbHeatm20, dirOut + "tbHeatmap20_z" + num2str(zoom) + ".csv");
 end
 
 fig = figure();
-h = heatmap(TbHeatm, 'Range', 'Focus20', 'ColorVariable', 'BlurPix','Colormap', parula);
+h = heatmap(TbHeatm20, 'Range', 'Focus20', 'ColorVariable', 'BlurPix','Colormap', parula);
 xlabel("Range")
 ylabel("Focus Interval")
 title("Zoom " + num2str(zoom) + ": Blurred Pixels per Range and Focus Interval")

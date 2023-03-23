@@ -31,7 +31,7 @@ platform = string(getenv("PLATFORM"));
 if(platform == "Laptop")
     data_root = "D:\data\dfd\20230317\processed\";
 elseif (platform == "LaptopN")
-    data_root = "C:\Projects\data\turbulence\";
+    data_root = "C:\Projects\data\dfd\20230317\";
 else   
     data_root = "C:\Data\JSSAP\";
 end

@@ -1,8 +1,8 @@
 function [maxgradV] = FindMaxGradient(img, intV, highest, colORrow )
 
-% highest: the number of columns that will be averaged for blur number
+% highest: the number of columns that will be averaged for blur count number
 % intV: the number of pixels to evaluate to see the greatest change in pixel value
-% %             For example: 190 to 60 = 130 over intV pixels
+% %        For example: Intensity change from 190 to 60 = 130 over intV pixels
 
 [rowsMx,colsMx] = size(img);
 if colORrow == "col"

@@ -11,8 +11,9 @@ clc
 rangeV = 10:1:19;
 zoomV = 0;
 
-plotcurves = 1; % Plots the blur count curves gradient selected in each image
+plotcurves = 10; % Plots the blur count curves gradient selected in each image
 saveHeatmap = 1;
+%%%%%%%%% NOTE:  Alter intV - affects high blur counts !!!!!
 
 %% Setup data directories
 platform = string(getenv("PLATFORM"));
@@ -24,9 +25,8 @@ else
     data_root = "C:\Data\JSSAP\Mar2023BlurCount\";
 end
 
-dirOut = data_root + "Results_LrgCB2\";
+dirOut = data_root + "Results_LrgCB3_i150\";
 
-%% Loop through images by zoom and range
 
 %% Set up a table to collect results by zoom value
 numRows = 20000;
@@ -35,7 +35,9 @@ vartypes = {'string','string','uint16','uint16','uint16','uint16','uint16','doub
 Tb = table('Size', [numRows, length(col_label)], 'VariableTypes', vartypes);
 Tb.Properties.VariableNames = col_label.';
 
-indT = 1;
+%% Loop through images by zoom and range
+% Find blur count and add to table
+indT = 1; % Table index
 for zoom = zoomV
     for rng = rangeV
         % Get filename based on zoom and range values
@@ -43,7 +45,7 @@ for zoom = zoomV
         image_ext = '*.png';
         listing = dir(strcat(img_path, '/', image_ext));
         fprintf('IMAGE PATH: %s\n', img_path);
-        
+        %%%%%%% By Image %%%%%%
         for idx=1:numel(listing)
             % Find focus
             focus = FindFocus(listing(idx).name);
@@ -59,8 +61,8 @@ for zoom = zoomV
             % pixels.
             % The maximum gradient may indicate the least turbulence, so that the
             % blur in this region is due only to focus and range.
-            highestNum = 3; % Number of rows that will be averaged for blur number
-            intV = 100; % Interval size in pixels that will be evaluated for gradient
+            highestNum = 3; % Number of rows that will be averaged for blur count number
+            intV = 120; % Interval size in pixels that will be evaluated for gradient
             indB = 1; % Index for blurpix matrix
             maxgradV = FindMaxGradient(img, intV, highestNum, "row"); 
             % The above function returns maxgradV(row,:) = [maxgRw, maxgCol, maxgrad, posSlope];  
@@ -79,7 +81,7 @@ for zoom = zoomV
                 [iMx,mx,iMn,mn] = FindMaxMinCol(maxgCol, img_maxgRow);
 
                 %% Find blur count
-                [blurPix(indB), indMn, indMx] = CalculateBlur2(iMn, iMx, mn, mx);
+                blurPix(indB) = iMn-iMx;
                 indB=indB+1;
                 
                 %% Plot the column in the image with the gradient max, min,
@@ -88,8 +90,6 @@ for zoom = zoomV
                     figure('WindowState','maximized')
                     plot(1:img_w, img_maxgRow, '-b')
                     hold on
-%                     plot(maxgCol, img_maxgRow(maxgCol), 'r*')
-%                     hold on
                     plot(iMn, mn, 'g*')
                     hold on
                     plot(iMx, mx, 'm*')
@@ -106,12 +106,13 @@ for zoom = zoomV
                     ylim([0,255])
                     
                     hold off
-                    %pause(1)
+                    pause(1)
                     close all
                 end
             end
               
-            % Calculate mean blur count of all gradients in image
+            %% Calculate mean blur count of all gradients in the one image
+            %    and enter the result into the table Tb
             if mean(blurPix) > 0
                 Tb(indT,["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd"]) = ...
                     {img_path, listing(idx).name, rng, zoom, focus, img_h, img_w };
@@ -128,7 +129,6 @@ for zoom = zoomV
     % Remove unused rows in table
     Tb = Tb(Tb.Range > 0,:);
     if saveHeatmap == 1
-        %writetable(Tb, dirOut + "tb" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".csv");
         writetable(Tb, dirOut + "tb_z" + num2str(zoom) + ".csv");
     end
     
@@ -138,7 +138,7 @@ for zoom = zoomV
     endFocus = max(focusVals);
     focusI = startFocus:100:endFocus;
     
-    %rowsH = (length(rangeV)) * length(focusI);
+    % Heatmap for focus intervals of 100
     rowsH = 20000;
     vartypesH = {'uint16', 'uint16', 'uint16', 'double'};
     TbHeatm = table('Size', [rowsH,4], 'VariableTypes', vartypesH);
@@ -148,18 +148,14 @@ for zoom = zoomV
         for fc = 1:length(focusI)
             indF = find(Tb.Range == rng & Tb.Zoom == zoom & Tb.Focus100 == focusI(fc));
             bc = mean(Tb.BlurCount(indF));
-            if bc>=1
-                bc = cast(bc,"uint8");
-            end
             TbHeatm(indH,:) = {rng, zoom, focusI(fc), bc};
             indH = indH + 1;
         end
     end
-    % Remove unused rows in table
+    % Remove unused rows in tableCalculateBlur2
     TbHeatm = TbHeatm(TbHeatm.Range > 0,:);
     if saveHeatmap == 1
-       %writetable(TbHeatm, dirOut + "tbHeatmap" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".csv");
-        writetable(TbHeatm, dirOut + "tbHeatmap_z" + num2str(zoom) + ".csv");
+        writetable(TbHeatm, dirOut + "tbHeatmap100_z" + num2str(zoom) + ".csv");
     end
     
     fig = figure();
@@ -169,82 +165,39 @@ for zoom = zoomV
     title("Zoom " + num2str(zoom) + ": Blurred Pixels per Range and Focus Interval")
     set(gcf,'position',([100,100,1100,1500]),'color','w')
     if saveHeatmap == 1
-        %fileOut = dirOut + "hm" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".png";
-        fileOut = dirOut + "hm_z_" + num2str(zoom) + ".png";
+        fileOut = dirOut + "hm100_z" + num2str(zoom) + ".png";
         exportgraphics(h,fileOut,'Resolution',300)
-        %fileFig = dirOut + "hm" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".fig";
-        fileFig = dirOut + "hm_z_" + num2str(zoom) + ".fig";
+        fileFig = dirOut + "hm100_z" + num2str(zoom) + ".fig";
         savefig(fig, fileFig)
     end
 
-%     %% Create output matrix .mat from TbHeatm
-% 
-%     fileMat = data_root + "results_CB_focusRange\Nsample_blur_radius_data5_z" + num2str(zoom) + ".mat";
-%     for rInd = 1:length(rangeV)
-%         for fInd = 1:length(focusI)
-%             indB = find(TbHeatm.Range == rangeV(rInd) & TbHeatm.Focus5 == focusI(fInd));
-%             newMat(fInd, rInd) = TbHeatm.BlurPix(indB);
-%         end
-%     end
-%     range = rangeV;
-%     coc_map = newMat;
-%     focus = focusI;
-%     
-%     save(fileMat, 'coc_map', 'focus','range','zoom')
-    
+
 end
 
 Tb.Focus20 = 20*floor(Tb.Focus/20);
-focusVals = unique(Tb.Focus20);
-startFocus = min(focusVals);
-endFocus = max(focusVals);
-focusI = startFocus:100:endFocus;
-
-figure()
-rr= Tb.Range;
-ff = Tb.Focus20;
-bb = Tb.BlurCount;
-xx = min(rr):1:max(rr);
-yy = min(ff):20:max(ff);
-[X,Y] = ndgrid(xx,yy);
-%F = scatteredInterpolant(rr, ff, bb);
-Z = [rr ff bb];
-figure()
-surf(Z,'edgecolor', 'none');
-figure()
-mesh(Z);
-xlabel("Range")
-ylabel("Focus")
-zlabel("BlurCount")
+focusVals20 = unique(Tb.Focus20);
+startFocus = min(focusVals20);
+endFocus = max(focusVals20);
+focusI20 = startFocus:20:endFocus;
 
 %%%%%%
-
-focusVals = unique(Tb.Focus20);
-startFocus = min(focusVals);
-endFocus = max(focusVals);
-focusI = startFocus:20:endFocus;
-
-%rowsH = (length(rangeV)) * length(focusI);
+% Heatmap with focus intervals of 20
 rowsH = 20000;
 vartypesH = {'uint16', 'uint16', 'uint16', 'double'};
 TbHeatm20 = table('Size', [rowsH,4], 'VariableTypes', vartypesH);
 TbHeatm20.Properties.VariableNames = ["Range", "Zoom", "Focus20", "BlurPix"];
 indH = 1;
 for rng = rangeV
-    for fc = 1:length(focusI)
-        indF = find(Tb.Range == rng & Tb.Zoom == zoom & Tb.Focus20 == focusI(fc));
-        bc = mean(Tb.BlurCount(indF));
-        if bc>=1
-            bc = cast(bc,"uint8");
-        end
-        TbHeatm20(indH,:) = {rng, zoom, focusI(fc), bc};
+    for fc = 1:length(focusI20)
+        indF = find(Tb.Range == rng & Tb.Zoom == zoom & Tb.Focus20 == focusI20(fc));
+         bc = mean(Tb.BlurCount(indF));
+        TbHeatm20(indH,:) = {rng, zoom, focusI20(fc), bc};
         indH = indH + 1;
     end
 end
 % Remove unused rows in table
 TbHeatm20 = TbHeatm20(TbHeatm20.Range > 0,:);
 if saveHeatmap == 1
-   %writetable(TbHeatm, dirOut + "tbHeatmap" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".csv");
     writetable(TbHeatm20, dirOut + "tbHeatmap20_z" + num2str(zoom) + ".csv");
 end
 
@@ -255,11 +208,53 @@ ylabel("Focus Interval")
 title("Zoom " + num2str(zoom) + ": Blurred Pixels per Range and Focus Interval")
 set(gcf,'position',([100,100,1100,1500]),'color','w')
 if saveHeatmap == 1
-    %fileOut = dirOut + "hm" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".png";
-    fileOut = dirOut + "hm20_z_" + num2str(zoom) + ".png";
+    fileOut = dirOut + "hm20_z" + num2str(zoom) + ".png";
     exportgraphics(h,fileOut,'Resolution',300)
-    %fileFig = dirOut + "hm" + texstr + "_g" + num2str(gradL)+ "_" + num2str(zoom) + ".fig";
-    fileFig = dirOut + "hm20_z_" + num2str(zoom) + ".fig";
+    fileFig = dirOut + "hm20_z" + num2str(zoom) + ".fig";
     savefig(fig, fileFig)
 end
 
+    %% Create output matrix .mat from TbHeatm
+
+    fileMat = dirOut + "Nsample_blur_radius_data_z0.mat";
+    for rInd = 1:length(rangeV)
+        for fInd = 1:length(focusI20)
+            indB = find(TbHeatm20.Range == rangeV(rInd) & TbHeatm20.Focus20 == focusI20(fInd));
+            newMat(fInd, rInd) = TbHeatm20.BlurPix(indB);
+        end
+    end
+    range = rangeV;
+    coc_map = newMat;
+    focus = focusI20;
+
+    % Replace NaNs with -1
+    coc_mapN = coc_map;
+    coc_mapN(isnan(coc_map))=-1;
+    
+    save(fileMat, 'coc_mapN', 'focus','range','zoom')
+
+    %% Surface plot
+    
+
+    fig = figure;
+    surf(rangeV, focusI20, coc_mapN,'edgecolor', 'none');
+    xlabel("Range")
+    ylabel("Focus")
+    zlabel("BlurCount")
+    if saveHeatmap == 1
+        fileFig = dirOut + "surf20_z" + num2str(zoom) + ".fig";
+        savefig(fig, fileFig)
+    end
+
+%     figure()
+%     surf(coc_mapN,'edgecolor', 'none');
+%     xlabel("Range")
+%     ylabel("Focus")
+%     zlabel("BlurCount")
+
+
+
+
+
+
+    

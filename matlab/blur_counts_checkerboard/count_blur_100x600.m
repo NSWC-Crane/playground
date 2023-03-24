@@ -11,7 +11,7 @@ clc
 rangeV = 10:1:19;
 zoomV = 0;
 
-plotcurves = 10; % Plots the blur count curves gradient selected in each image
+plotcurves = 0; % Plots the blur count curves gradient selected in each image
 saveHeatmap = 1;
 %%%%%%%%% NOTE:  Alter intV - affects high blur counts !!!!!
 

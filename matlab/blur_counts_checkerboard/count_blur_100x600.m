@@ -11,14 +11,19 @@ clc
 rangeV = 10:1:19;
 zoomV = 0;
 
-plotcurves = 0; % Plots the blur count curves gradient selected in each image
+focus_step = 20;
+focus_step_min = 16000;
+focus_step_max = 33500;
+num_steps = ceil((focus_step_max - focus_step_min)/focus_step);
+
+plotcurves = 1; % Plots the blur count curves gradient selected in each image
 saveHeatmap = 1;
 %%%%%%%%% NOTE:  Alter intV - affects high blur counts !!!!!
 
 %% Setup data directories
 platform = string(getenv("PLATFORM"));
 if(platform == "Laptop")
-    data_root = "D:\data\dfd\20230317\processed\";
+    data_root = "D:\data\dfd\20230324\processed\";
 elseif (platform == "LaptopN")
     data_root = "C:\Projects\data\dfd\20230317\";
 else   
@@ -34,6 +39,10 @@ col_label = ["ImgPath","Filename","Range","Zoom","Focus","ImgHt","ImgWd","BlurCo
 vartypes = {'string','string','uint16','uint16','uint16','uint16','uint16','double'};
 Tb = table('Size', [numRows, length(col_label)], 'VariableTypes', vartypes);
 Tb.Properties.VariableNames = col_label.';
+
+%% smoothing kernel
+kernel = ones(5,1);
+kernel = kernel/numel(kernel);
 
 %% Loop through images by zoom and range
 % Find blur count and add to table
@@ -61,7 +70,7 @@ for zoom = zoomV
             % pixels.
             % The maximum gradient may indicate the least turbulence, so that the
             % blur in this region is due only to focus and range.
-            highestNum = 3; % Number of rows that will be averaged for blur count number
+            highestNum = 1; % Number of rows that will be averaged for blur count number
             intV = 120; % Interval size in pixels that will be evaluated for gradient
             indB = 1; % Index for blurpix matrix
             maxgradV = FindMaxGradient(img, intV, highestNum, "row"); 
@@ -77,6 +86,9 @@ for zoom = zoomV
                 
                 % Looking at rows, not columns, in these images
                 img_maxgRow = img(maxgRw,:);
+                img_maxgRow = conv(img_maxgRow, kernel, 'same');
+                img_maxgRow = img_maxgRow(numel(kernel):end);
+                
                 %% Find max and min in the row with the max gradient
                 [iMx,mx,iMn,mn] = FindMaxMinCol(maxgCol, img_maxgRow);
 
@@ -87,8 +99,10 @@ for zoom = zoomV
                 %% Plot the column in the image with the gradient max, min,
                 % and blur count
                 if plotcurves == 1
-                    figure('WindowState','maximized')
-                    plot(1:img_w, img_maxgRow, '-b')
+%                     figure('WindowState','maximized')
+                    figure(1)
+%                     plot(1:img_w, img_maxgRow, '-b')
+                    plot(1:numel(img_maxgRow), img_maxgRow, '-b')
                     hold on
                     plot(iMn, mn, 'g*')
                     hold on
@@ -106,8 +120,8 @@ for zoom = zoomV
                     ylim([0,255])
                     
                     hold off
-                    pause(1)
-                    close all
+                    drawnow;
+%                     close all
                 end
             end
               

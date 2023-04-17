@@ -14,7 +14,7 @@ commandwindow;
 %%
 platform = string(getenv("PLATFORM"));
 if(platform == "Laptop")
-    data_root = "D:\data\dfd\20230324\processed\";
+    data_root = "D:\data\dfd\20230407\processed\";
 elseif (platform == "LaptopN")
     data_root = "C:\Projects\data\dfd\20230317\";
 else   
@@ -24,14 +24,15 @@ end
 
 % this defines the expected maximum blur radius
 % max_blur_radius = 300;
+image_skip = 4;
 
-focus_step = 20;
+focus_step = 5;
 
 scan_step = 3;
 scan_length = 10*scan_step;
 scan_offset = 2.8;
 
-high_std = 2.7;
+high_std = 4.0;
 low_std = 2.0;
 
 img_off_low = 10;
@@ -163,6 +164,7 @@ for kdx=1:num_folders
         % can be shifted to anywhere
     %     img_s = img(floor([slice_row - img_off_low, slice_row, slice_row + img_off_high]),:);
         img_s = img(slice_row,:);
+        img_s = mean(img, 1);
 
         % find the 'x' center of the image
         %img_cw = floor(img_w/2);
@@ -404,6 +406,9 @@ for kdx=1:num_folders
 
 end
 
+
+
+
 %% heatmap
 
 figure(301)
@@ -413,7 +418,7 @@ range = str2double(h.XData);
 focus = str2double(h.YData);
 coc_map = h.ColorData;
 % blur_count2 = blur_count;
-coc_map(isnan(blur_count2)) = -1;
+coc_map(isnan(coc_map)) = -1;
 
 range = cat(1, range, range(end)+1);
 
@@ -427,13 +432,13 @@ zlabel("BlurCount")
 
 zlim([0, max(coc_map(:))]);
 
-
 %% save the data as a mat file
 
 mat_savefile = save_dir + "/Nsample_blur_radius_data_z0.mat";
 
 zoom = zoom_val;
 save(mat_savefile, 'coc_map', 'focus','range','zoom')
+
 
 
 %% plot the final blur count
